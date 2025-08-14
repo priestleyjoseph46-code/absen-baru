@@ -3,2074 +3,1664 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi MotionLide Roleplay</title>
+    <title>Sistem Absensi Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Poppins', sans-serif;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .card-shadow {
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        .fingerprint-scanner {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #4f46e5 0%, #7c3aed 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .fingerprint-scanner:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(79, 70, 229, 0.5);
-        }
-        
-        .fingerprint-scanner.scanning {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(79, 70, 229, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .admin-panel {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-        
-        .motion-text {
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
-            background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradient 3s ease infinite;
-        }
-        
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-green { animation: pulseGreen 2s infinite; }
+        @keyframes pulseGreen { 0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } }
+        .pulse-red { animation: pulseRed 2s infinite; }
+        @keyframes pulseRed { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Header -->
-    <header class="gradient-bg text-white py-6 shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                        <span class="text-2xl">🎭</span>
-                    </div>
-                    <div>
-                        <h1 class="text-3xl font-bold motion-text">ABSENSI MOTIONLIDE ROLEPLAY</h1>
-                        <p class="text-blue-100">Sistem Absensi Fingerprint Real-time</p>
-                    </div>
+<body class="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-fingerprint text-white text-3xl"></i>
                 </div>
-                <div class="text-right">
-                    <div id="currentTime" class="text-xl font-semibold"></div>
-                    <div class="text-sm text-blue-100">🌐 Status: Online</div>
-                    <div class="text-xs text-blue-200">🔄 Auto Refresh: Aktif</div>
-                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Sistem Absensi</h1>
+                <p class="text-gray-600">Masuk untuk melakukan absensi</p>
             </div>
-        </div>
-    </header>
-
-    <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Fingerprint Scanner -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl p-8 card-shadow text-center">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Scan Fingerprint</h2>
-                    
-                    <div class="flex justify-center mb-6">
-                        <div id="fingerprintScanner" class="fingerprint-scanner">
-                            <span class="text-4xl text-white">👆</span>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <button id="userLoginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                            🔐 Login User
-                        </button>
-                        <button id="checkInBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            ✅ Check In
-                        </button>
-                        <button id="checkOutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            ❌ Check Out
-                        </button>
-                        <button id="signupBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                            👤 Daftar User Baru
-                        </button>
-                    </div>
-                    
-                    <div id="scanResult" class="mt-4 p-3 rounded-lg hidden"></div>
-                    
-                    <div class="mt-6 space-y-3">
-                        <div class="text-sm text-gray-600">
-                            <label class="block mb-2 font-medium">👤 Pilih User:</label>
-                            <select id="userSelect" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="guest">Guest</option>
-                            </select>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <p>🌐 IP: <span id="userIP" class="font-mono">192.168.1.100</span></p>
-                            <p id="loginStatus" class="text-red-600">🔒 Belum login</p>
-                        </div>
-                        
-                        <!-- Duty Hours Section -->
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <h4 class="font-semibold text-blue-800 mb-2">⏰ Total Jam Duty</h4>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span>Hari ini:</span>
-                                    <span id="todayHours" class="font-mono font-semibold">0 jam 0 menit</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Minggu ini:</span>
-                                    <span id="weekHours" class="font-mono font-semibold">24 jam 30 menit</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Bulan ini:</span>
-                                    <span id="monthHours" class="font-mono font-semibold">98 jam 15 menit</span>
-                                </div>
-                            </div>
-                            <button id="exportBtn" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                📊 Export ke Google Sheets
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Statistics -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl p-8 card-shadow">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Statistik Mingguan</h2>
-                    
-                    <div id="weeklyStatsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <!-- Dynamic weekly stats will be populated here -->
-                    </div>
-
-                    <!-- Weekly Chart -->
-                    <div class="bg-gray-50 p-6 rounded-xl">
-                        <h3 class="text-lg font-semibold mb-4">Grafik Kehadiran Minggu Ini</h3>
-                        <div id="weeklyChartContainer" class="space-y-3">
-                            <!-- Dynamic weekly chart will be populated here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Weekly Recap Section -->
-        <div class="mt-8">
-            <div class="bg-white rounded-2xl p-8 card-shadow">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">📅 Rekap Mingguan (Semua User)</h2>
-                    <button id="manualCleanBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition duration-300 flex items-center space-x-2">
-                        <span>🧹</span>
-                        <span>Bersihkan & Update</span>
-                    </button>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username/ID</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan username atau ID">
                 </div>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan password">
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Masuk
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <button id="adminLoginBtn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <i class="fas fa-user-shield mr-1"></i>Login sebagai Administrator
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="userDashboard" class="hidden min-h-screen p-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-gradient-to-r from-green-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800" id="userName"></h2>
+                            <p class="text-gray-600" id="userID"></p>
+                        </div>
+                    </div>
+                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Keluar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Shift Selection -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-clock mr-2 text-blue-600"></i>Pilih Shift Kerja
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button class="shift-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-3 px-4 rounded-lg font-semibold transition duration-300" data-shift="1">
+                        <i class="fas fa-sun mr-2"></i>Shift 1<br><small>07:00-15:00</small>
+                    </button>
+                    <button class="shift-btn bg-orange-100 hover:bg-orange-200 text-orange-800 py-3 px-4 rounded-lg font-semibold transition duration-300" data-shift="2">
+                        <i class="fas fa-sun mr-2"></i>Shift 2<br><small>15:00-23:00</small>
+                    </button>
+                    <button class="shift-btn bg-purple-100 hover:bg-purple-200 text-purple-800 py-3 px-4 rounded-lg font-semibold transition duration-300" data-shift="3">
+                        <i class="fas fa-moon mr-2"></i>Shift 3<br><small>23:00-07:00</small>
+                    </button>
+                    <button class="shift-btn bg-green-100 hover:bg-green-200 text-green-800 py-3 px-4 rounded-lg font-semibold transition duration-300" data-shift="4">
+                        <i class="fas fa-clock mr-2"></i>Shift 4<br><small>Fleksibel</small>
+                    </button>
+                </div>
+                <p class="text-center text-gray-600 mt-4">Shift yang dipilih: <span id="selectedShift" class="font-semibold text-blue-600">Belum dipilih</span></p>
+            </div>
+
+            <!-- Attendance Buttons -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
+                    <div class="mb-6">
+                        <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-sign-in-alt text-green-600 text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Finger In</h3>
+                        <p class="text-gray-600">Absen masuk kerja</p>
+                    </div>
+                    <button id="fingerInBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-semibold text-lg transition duration-300 pulse-green" disabled>
+                        <i class="fas fa-fingerprint mr-2"></i>FINGER IN
+                    </button>
+                    <p id="fingerInTime" class="text-sm text-gray-500 mt-2"></p>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xl p-8 text-center fade-in">
+                    <div class="mb-6">
+                        <div class="bg-red-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-sign-out-alt text-red-600 text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Finger Out</h3>
+                        <p class="text-gray-600">Absen pulang kerja</p>
+                    </div>
+                    <button id="fingerOutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-semibold text-lg transition duration-300 pulse-red" disabled>
+                        <i class="fas fa-fingerprint mr-2"></i>FINGER OUT
+                    </button>
+                    <p id="fingerOutTime" class="text-sm text-gray-500 mt-2"></p>
+                </div>
+            </div>
+
+            <!-- Today's Status -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-calendar-day mr-2 text-blue-600"></i>Status Hari Ini
+                </h3>
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Tanggal</p>
+                        <p class="font-semibold text-gray-800" id="todayDate"></p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Waktu Masuk</p>
+                        <p class="font-semibold text-green-600" id="todayIn">-</p>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Waktu Keluar</p>
+                        <p class="font-semibold text-red-600" id="todayOut">-</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Shift</p>
+                        <p class="font-semibold text-purple-600" id="todayShift">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Hours Summary -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-bar mr-2 text-purple-600"></i>Ringkasan Jam Kerja Minggu Ini
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
                     <!-- Weekly Summary -->
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">📊 Ringkasan Minggu Ini</h3>
-                        <div class="space-y-4">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="text-2xl font-bold">156</div>
-                                        <div class="text-sm opacity-90">Total Jam Kerja</div>
-                                    </div>
-                                    <div class="text-3xl">⏰</div>
-                                </div>
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold text-gray-800">Total Jam Kerja</h4>
+                            <i class="fas fa-clock text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Minggu Ini:</span>
+                                <span class="font-bold text-purple-600 text-lg" id="weeklyHours">0 jam 0 menit</span>
                             </div>
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="text-2xl font-bold">92%</div>
-                                        <div class="text-sm opacity-90">Tingkat Kehadiran</div>
-                                    </div>
-                                    <div class="text-3xl">✅</div>
-                                </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hari Kerja:</span>
+                                <span class="font-semibold text-gray-800" id="workingDays">0 hari</span>
                             </div>
-                            <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="text-2xl font-bold">8</div>
-                                        <div class="text-sm opacity-90">Total Keterlambatan</div>
-                                    </div>
-                                    <div class="text-3xl">⚠️</div>
-                                </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Rata-rata/Hari:</span>
+                                <span class="font-semibold text-gray-800" id="averageHours">0 jam 0 menit</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- User Performance -->
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">👥 Performa User Minggu Ini</h3>
-                        <div id="weeklyUserPerformance" class="space-y-3 max-h-80 overflow-y-auto">
-                            <!-- Dynamic user performance will be populated here -->
+                    <!-- Daily Breakdown -->
+                    <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold text-gray-800">Rincian Harian</h4>
+                            <i class="fas fa-calendar-week text-green-600 text-xl"></i>
                         </div>
-                        
-                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold text-gray-800 mb-2">📈 Tren Mingguan</h4>
-                            <div class="text-sm text-gray-600">
-                                <p>• Peningkatan kehadiran 5% dari minggu lalu</p>
-                                <p>• Rata-rata jam kerja: 38 jam/minggu</p>
-                                <p>• Keterlambatan menurun 15%</p>
-                            </div>
+                        <div class="space-y-2" id="dailyBreakdown">
+                            <!-- Daily hours will be populated here -->
                         </div>
                     </div>
                 </div>
                 
-                <!-- Weekly Calendar View -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold mb-4">📅 Kalender Kehadiran Minggu Ini</h3>
-                    <div class="grid grid-cols-7 gap-2">
-                        <div class="text-center font-semibold text-gray-600 p-2">Sen</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Sel</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Rab</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Kam</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Jum</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Sab</div>
-                        <div class="text-center font-semibold text-gray-600 p-2">Min</div>
-                        
-                        <div class="bg-green-100 border-2 border-green-500 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-green-800">18</div>
-                            <div class="text-xs text-green-600">4 hadir</div>
-                        </div>
-                        <div class="bg-green-100 border-2 border-green-500 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-green-800">19</div>
-                            <div class="text-xs text-green-600">4 hadir</div>
-                        </div>
-                        <div class="bg-yellow-100 border-2 border-yellow-500 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-yellow-800">20</div>
-                            <div class="text-xs text-yellow-600">3 hadir</div>
-                        </div>
-                        <div class="bg-green-100 border-2 border-green-500 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-green-800">21</div>
-                            <div class="text-xs text-green-600">4 hadir</div>
-                        </div>
-                        <div class="bg-blue-100 border-2 border-blue-500 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-blue-800">22</div>
-                            <div class="text-xs text-blue-600">Hari ini</div>
-                        </div>
-                        <div class="bg-gray-100 border-2 border-gray-300 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-gray-500">23</div>
-                            <div class="text-xs text-gray-400">Weekend</div>
-                        </div>
-                        <div class="bg-gray-100 border-2 border-gray-300 rounded-lg p-3 text-center">
-                            <div class="font-semibold text-gray-500">24</div>
-                            <div class="text-xs text-gray-400">Weekend</div>
-                        </div>
+                <!-- Progress Bar -->
+                <div class="mt-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Target Mingguan (40 jam)</span>
+                        <span id="progressPercentage">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%" id="progressBar"></div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Admin Panel -->
-        <div class="mt-8">
-            <div class="bg-white rounded-2xl p-8 card-shadow">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">👨‍💼 Panel Administrator</h2>
-                    <button id="adminToggle" class="admin-panel text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition duration-300">
-                        🔐 Login Admin
-                    </button>
-                </div>
-
-                <div id="adminContent" class="hidden">
-                    <!-- Admin Dashboard Overview -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold" id="adminTotalUsers">5</div>
-                            <div class="text-sm opacity-90">Total User</div>
-                        </div>
-                        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold" id="adminActiveToday">3</div>
-                            <div class="text-sm opacity-90">Aktif Hari Ini</div>
-                        </div>
-                        <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold" id="adminTotalHours">156</div>
-                            <div class="text-sm opacity-90">Total Jam Minggu</div>
-                        </div>
-                        <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold" id="adminLateCount">8</div>
-                            <div class="text-sm opacity-90">Keterlambatan</div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- User Management -->
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold">👥 Kelola User</h3>
-                                <button id="addUserBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition duration-300">
-                                    ➕ Tambah User
-                                </button>
-                            </div>
-                            <div id="adminUserList" class="space-y-4 max-h-96 overflow-y-auto">
-                                <!-- Dynamic user list will be populated here -->
-                            </div>
-                        </div>
-
-                        <!-- Detailed Activity Log -->
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold">📋 Log Aktivitas Detail</h3>
-                                <button id="clearLogBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition duration-300">
-                                    🗑️ Clear Log
-                                </button>
-                            </div>
-                            <div id="activityLogContainer" class="space-y-3 max-h-96 overflow-y-auto">
-                                <!-- Dynamic activity log will be populated here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Advanced Admin Tools -->
-                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Bulk Actions -->
-                        <div class="bg-gray-50 p-6 rounded-xl">
-                            <h3 class="text-lg font-semibold mb-4">⚙️ Aksi Massal</h3>
-                            <div class="space-y-3">
-                                <button id="exportAllDataBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    📊 Export Semua Data User
-                                </button>
-                                <button id="sendWeeklyReportBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    📧 Kirim Laporan Mingguan
-                                </button>
-                                <button id="resetMonthlyHoursBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    🔄 Reset Jam Duty Bulanan
-                                </button>
-                                <button id="generateCustomReportBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    📋 Generate Laporan Custom
-                                </button>
-                                <button id="syncDatabaseBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    🌐 Sinkronisasi Manual ke Database
-                                </button>
-                                <button id="deleteAllWeeklyRecapsBtn" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    🗑️ Hapus Semua Rekap Mingguan
-                                </button>
-                                <button id="autoDeleteInactiveUsersBtn" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">
-                                    🤖 Auto Delete User Tidak Aktif
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- System Settings -->
-                        <div class="bg-gray-50 p-6 rounded-xl">
-                            <h3 class="text-lg font-semibold mb-4">🔧 Pengaturan Sistem</h3>
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">Auto Backup</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" checked class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                    </label>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">Notifikasi Email</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" checked class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                    </label>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">Mode Debug</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer">
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                    </label>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Jam Kerja Standar</label>
-                                    <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                        <option>8 jam/hari</option>
-                                        <option>7 jam/hari</option>
-                                        <option>9 jam/hari</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Network Status -->
-                    <div class="mt-8 p-6 bg-gray-50 rounded-xl">
-                        <h3 class="text-lg font-semibold mb-4">🌐 Status Jaringan & Sinkronisasi</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="text-center">
-                                <div class="text-2xl mb-2">🟢</div>
-                                <div class="font-medium">Server Utama</div>
-                                <div class="text-sm text-gray-600">Online</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl mb-2">🟢</div>
-                                <div class="font-medium">Database</div>
-                                <div class="text-sm text-gray-600">Tersinkron</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl mb-2">🟡</div>
-                                <div class="font-medium">Backup Server</div>
-                                <div class="text-sm text-gray-600">Standby</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Send to Spreadsheet -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 fade-in">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-table mr-2 text-green-600"></i>Kirim Data Absensi
+                </h3>
+                <p class="text-gray-600 mb-4">Kirim data absensi Anda ke spreadsheet untuk pencatatan resmi</p>
+                <button id="sendToSpreadsheetBtn" class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-4 rounded-xl font-semibold text-lg transition duration-300">
+                    <i class="fas fa-paper-plane mr-2"></i>KIRIM KE SPREADSHEET
+                </button>
+                <p id="sendStatus" class="text-center text-sm mt-3"></p>
             </div>
         </div>
     </div>
 
-    <!-- User Login Modal -->
-    <div id="userLoginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 card-shadow">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">🔐 Login User</h3>
-                <button id="closeUserModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="hidden min-h-screen p-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Admin Header -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-gradient-to-r from-purple-500 to-pink-500 w-16 h-16 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-shield text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Dashboard Administrator</h2>
+                            <p class="text-gray-600">Kelola data absensi karyawan</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <i class="fas fa-download mr-2"></i>Export Data
+                        </button>
+                        <button id="adminLogoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Keluar
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            <div class="text-center mb-6">
-                <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-3xl text-white">👤</span>
-                </div>
-                <p class="text-gray-600">Silakan login dengan akun Anda untuk mengakses sistem absensi fingerprint</p>
-            </div>
-            
-            <form id="userLoginForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                    <input type="text" id="loginUsername" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan username">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan password">
-                </div>
-                
-                <div class="flex items-center">
-                    <input type="checkbox" id="rememberMe" class="mr-2">
-                    <label for="rememberMe" class="text-sm text-gray-600">Ingat saya</label>
-                </div>
-                
-                <div class="flex space-x-4 pt-4">
-                    <button type="button" id="cancelUserLogin" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Batal
-                    </button>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Login
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- Signup Modal -->
-    <div id="signupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 card-shadow">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">👤 Daftar User Baru</h3>
-                <button id="closeSignupModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            <!-- Stats Cards -->
+            <div class="grid md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Karyawan</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalEmployees">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-users text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Hadir Hari Ini</p>
+                            <p class="text-2xl font-bold text-green-600" id="presentToday">0</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-check text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Belum Absen</p>
+                            <p class="text-2xl font-bold text-yellow-600" id="notPresent">0</p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-full">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Terlambat</p>
+                            <p class="text-2xl font-bold text-red-600" id="lateToday">0</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <i class="fas fa-exclamation text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <form id="signupForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
-                    <input type="text" id="fullName" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Masukkan nama lengkap">
+
+            <!-- Attendance Table -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-table mr-2 text-purple-600"></i>Data Absensi Minggu Ini
+                    </h3>
+                    <div class="flex space-x-3">
+                        <select id="weekFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="current">Minggu Ini</option>
+                            <option value="last">Minggu Lalu</option>
+                        </select>
+                        <button id="refreshBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                    <input type="text" id="username" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Masukkan username">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Nama</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Shift</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Masuk</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Keluar</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Durasi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTable">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input type="email" id="email" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Masukkan email">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="userPassword" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Masukkan password untuk login">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password</label>
-                    <input type="password" id="confirmPassword" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Konfirmasi password">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Departemen</label>
-                    <select id="department" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                        <option value="">Pilih Departemen</option>
-                        <option value="Executive">Executive</option>
-                        <option value="Wakil Direktur">Wakil Direktur</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Dokter Spesialis">Dokter Spesialis</option>
-                        <option value="Dokter">Dokter</option>
-                        <option value="Asisten Dokter">Asisten Dokter</option>
-                        <option value="Perawat">Perawat</option>
-                        <option value="Training">Training</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Posisi</label>
-                    <input type="text" id="position" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Masukkan posisi">
-                </div>
-                
-                <div class="flex space-x-4 pt-4">
-                    <button type="button" id="cancelSignup" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Batal
-                    </button>
-                    <button type="submit" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Daftar
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <script>
-        // Real-time clock with auto refresh system
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleString('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            document.getElementById('currentTime').textContent = timeString;
-            
-            // Check for auto refresh conditions
-            checkAutoRefresh(now);
-        }
-        
-        // Auto refresh system for weekly and monthly data
-        function checkAutoRefresh(now) {
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday
-            const currentDate = now.getDate();
-            
-            // Weekly refresh: Every Monday at 00:00
-            if (currentDay === 1 && currentHour === 0 && currentMinute === 0) {
-                performWeeklyRefresh();
-            }
-            
-            // Monthly refresh: Every 1st day of month at 00:00
-            if (currentDate === 1 && currentHour === 0 && currentMinute === 0) {
-                performMonthlyRefresh();
-            }
-        }
-        
-        // Perform weekly refresh
-        async function performWeeklyRefresh() {
-            console.log('🔄 Auto Weekly Refresh triggered at:', new Date().toISOString());
-            
-            // Show notification
-            showAutoRefreshNotification('weekly');
-            
-            // Reset all weekly hours
-            users.forEach(user => {
-                user.dutyHours.week = 0;
-            });
-            
-            // Clear weekly activity log
-            activityLog = activityLog.filter(log => {
-                const logDate = new Date(log.timestamp);
-                const weekAgo = new Date();
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                return logDate > weekAgo;
-            });
-            
-            // Save refresh action to database
-            await saveToDatabase({
-                action: 'auto_weekly_refresh',
-                timestamp: new Date().toISOString(),
-                affectedUsers: users.length - 1,
-                resetType: 'weekly_hours'
-            }, 'auto_refresh');
-            
-            // Update displays
-            updateDutyHours();
-            updateAdminUserList();
-            updateWeeklyStats();
-            updateWeeklyUserPerformance();
-            updateActivityLog();
-            
-            console.log('✅ Weekly refresh completed successfully');
-        }
-        
-        // Perform monthly refresh
-        async function performMonthlyRefresh() {
-            console.log('🔄 Auto Monthly Refresh triggered at:', new Date().toISOString());
-            
-            // Show notification
-            showAutoRefreshNotification('monthly');
-            
-            // Reset all monthly hours
-            users.forEach(user => {
-                user.dutyHours.month = 0;
-            });
-            
-            // Save refresh action to database
-            await saveToDatabase({
-                action: 'auto_monthly_refresh',
-                timestamp: new Date().toISOString(),
-                affectedUsers: users.length - 1,
-                resetType: 'monthly_hours'
-            }, 'auto_refresh');
-            
-            // Update displays
-            updateDutyHours();
-            updateAdminUserList();
-            
-            console.log('✅ Monthly refresh completed successfully');
-        }
-        
-        // Show auto refresh notification
-        function showAutoRefreshNotification(type) {
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
-            notification.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="text-2xl">🔄</div>
-                    <div>
-                        <div class="font-semibold">Auto Refresh ${type === 'weekly' ? 'Mingguan' : 'Bulanan'}</div>
-                        <div class="text-sm opacity-90">Sistem otomatis mereset data ${type === 'weekly' ? 'mingguan' : 'bulanan'}</div>
-                        <div class="text-xs opacity-75 mt-1">✅ Tersimpan ke Google Database</div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 5000);
-        }
-        
-        setInterval(updateTime, 1000);
-        updateTime();
+        // Employee data
+        const employees = {
+            "0001": { name: "Joseph Preistley", password: "0001" },
+            "0002": { name: "panda Reyez", password: "0002" },
+            "0003": { name: "Abol Wangjanim", password: "0003" },
+            "0004": { name: "Erga Shaka", password: "0004" },
+            "0005": { name: "Adinda Prinsloo", password: "0005" },
+            "0006": { name: "Gracella Blanche", password: "0006" },
+            "0007": { name: "Valco Blanche", password: "0007" },
+            "0008": { name: "Oshee Khair", password: "0008" },
+            "0009": { name: "Naomi Reksa Hakanatomi", password: "0009" },
+            "0010": { name: "Aurelya L. Keenan", password: "0010" },
+            "0011": { name: "Arkahans Ruizcarrillo", password: "0011" },
+            "0012": { name: "Binu Twuokai GSTR", password: "0012" },
+            "0013": { name: "Jibil Dossman", password: "0013" },
+            "0014": { name: "Taka Nome", password: "0014" },
+            "0015": { name: "Winther Sham Weasley", password: "0015" },
+            "0016": { name: "Kardus Smith", password: "0016" },
+            "0017": { name: "Hasian Nalagu", password: "0017" },
+            "0018": { name: "Komang Lia", password: "0018" },
+            "0019": { name: "Mosawo Koiiro", password: "0019" },
+            "0020": { name: "Kalvin Smoke", password: "0020" },
+            "0021": { name: "Edel C. Zion", password: "0021" },
+            "0023": { name: "Junhoo Renvale", password: "0023" },
+            "0024": { name: "Aloysius Jayden", password: "0024" },
+            "0025": { name: "Zein Frostwalker", password: "0025" },
+            "0026": { name: "Rexxy Aldian", password: "0026" },
+            "0027": { name: "Leon L Lancaster", password: "0027" },
+            "0028": { name: "Van De Louise", password: "0028" },
+            "0029": { name: "Zayne Aiden Adhiraharjo", password: "0029" },
+            "0030": { name: "Ken Kichiro", password: "0030" },
+            "0031": { name: "Jordan Saputra", password: "0031" },
+            "0032": { name: "Zycan Kennedy", password: "0032" },
+            "0033": { name: "Ken Chana", password: "0033" },
+            "0034": { name: "Sunny Chana", password: "0034" },
+            "0035": { name: "Coky Bellamy", password: "0035" },
+            "0036": { name: "Echi Vannessa", password: "0036" },
+            "0037": { name: "Dontol Kim", password: "0037" },
+            "0038": { name: "Arvie Alejandro", password: "0038" },
+            "0039": { name: "Chris Gabriell", password: "0039" },
+            "0040": { name: "Billy McCartney", password: "0040" },
+            "0041": { name: "Carissa Blanche", password: "0041" },
+            "0042": { name: "GLADE KP TACHIBANA", password: "0042" },
+            "0043": { name: "KanzSU Riverra", password: "0043" },
+            "0044": { name: "JAMAL SHAKUR", password: "0044" },
+            "0045": { name: "Jay D Machbet", password: "0045" },
+            "0046": { name: "Haji Naim", password: "0046" },
+            "0047": { name: "Raka Pieterson", password: "0047" },
+            "0048": { name: "Bastian Galael", password: "0048" },
+            "0049": { name: "Ucok Bedor", password: "0049" },
+            "0050": { name: "Aletha Constance", password: "0050" },
+            "0051": { name: "Mora G. Novoselic", password: "0051" },
+            "0052": { name: "Jhon Cry", password: "0052" },
+            "0053": { name: "Bie Ardyn", password: "0053" },
+            "0054": { name: "Shira Corazon", password: "0054" },
+            "0055": { name: "Cowbar Wingston", password: "0055" },
+            "0056": { name: "Jehan Jiangguo", password: "0056" },
+            "0057": { name: "Jimmy Priestley", password: "0057" },
+            "0058": { name: "Shibal El Morfem", password: "0058" },
+            "0059": { name: "Topek Oryza", password: "0059" },
+            "0060": { name: "Nord Heizzer", password: "0060" },
+            "0061": { name: "Haruu ru", password: "0061" },
+            "0062": { name: "Luffy Pielofi", password: "0062" },
+            "0063": { name: "Kairi Summer", password: "0063" },
+            "0064": { name: "Kenzo Alvarez", password: "0064" },
+            "0065": { name: "Latom Whiskey", password: "0065" },
+            "0066": { name: "Masaru Enatsu", password: "0066" },
+            "0067": { name: "Akira Czarovich", password: "0067" },
+            "0068": { name: "Devano Cruzz", password: "0068" },
+            "0069": { name: "Marcsha Niel Lopez", password: "0069" },
+            "0070": { name: "Izanami Sora", password: "0070" },
+            "0071": { name: "Adrian Suryadi", password: "0071" },
+            "0072": { name: "Rochelle Berlingham", password: "0072" },
+            "0073": { name: "Chiro O Tachibana", password: "0073" },
+            "0074": { name: "Mike Banning", password: "0074" },
+            "0075": { name: "Nyx L. Gramantha", password: "0075" },
+            "0076": { name: "Jack Noire", password: "0076" },
+            "0077": { name: "Enviel Anesthesia", password: "0077" },
+            "0078": { name: "Leticia Gracia", password: "0078" },
+            "0079": { name: "Rom Beng", password: "0079" },
+            "0080": { name: "Osvalt Xaverus", password: "0080" },
+            "0081": { name: "Keenan Yohooo", password: "0081" },
+            "0082": { name: "Giandra Dabona", password: "0082" },
+            "0083": { name: "Lemi Ardianto", password: "0083" },
+            "0084": { name: "Zeiron Miltons", password: "0084" },
+            "0085": { name: "Daniel Alex", password: "0085" },
+            "0086": { name: "Kocheng Sahari", password: "0086" },
+            "0087": { name: "Bianca Ivy", password: "0087" },
+            "0088": { name: "Ethan Graves", password: "0088" },
+            "0089": { name: "Aurel Geraldine", password: "0089" },
+            "0090": { name: "Rangas Ikales", password: "0090" },
+            "0091": { name: "Joseph Irgi", password: "0091" },
+            "0092": { name: "Darren Woods", password: "0092" },
+            "0093": { name: "Yuusha Yarechi", password: "0093" },
+            "0094": { name: "Bramasta Farrel", password: "0094" },
+            "0095": { name: "Wyda Cantik", password: "0095" },
+            "0096": { name: "Wenddie Beer", password: "0096" },
+            "0097": { name: "Bakti Millier", password: "0097" },
+            "0098": { name: "Nadhyr Kaelan", password: "0098" },
+            "0099": { name: "Witel Whistle", password: "0099" },
+            "0100": { name: "Alexander D Raizel", password: "0100" },
+            "0101": { name: "Railo Bond", password: "0101" },
+            "0102": { name: "Rudi Santet", password: "0102" },
+            "0103": { name: "Loen Sky", password: "0103" },
+            "0104": { name: "Jia Julian", password: "0104" },
+            "0105": { name: "Kama Kumara", password: "0105" },
+            "0106": { name: "Jovel Alexandro", password: "0106" },
+            "0107": { name: "Jamal Rashid", password: "0107" },
+            "0108": { name: "Maulana Asep", password: "0108" },
+            "0109": { name: "Akash Sandikala", password: "0109" },
+            "0110": { name: "Jezabel Ryxzy", password: "0110" },
+            "0111": { name: "Aceng Gacor", password: "0111" },
+            "0112": { name: "John Arthur", password: "0112" },
+            "0113": { name: "Riko Newgate", password: "0113" },
+            "0114": { name: "Budi Tabuti", password: "0114" },
+            "0115": { name: "Franzovich DeLuca", password: "0115" },
+            "0116": { name: "Silas Amari", password: "0116" },
+            "0117": { name: "Mayura Zahfira", password: "0117" },
+            "0118": { name: "Kim Ouchi", password: "0118" },
+            "0119": { name: "Jo Bang", password: "0119" },
+            "0120": { name: "Ramasky Spike", password: "0120" },
+            "0121": { name: "klol acveraz", password: "0121" },
+            "0122": { name: "John Nathan", password: "0122" },
+            "0123": { name: "Martin Morgan", password: "0123" },
+            "0124": { name: "Musya Rifu", password: "0124" },
+            "0125": { name: "Indra Izero", password: "0125" },
+            "0126": { name: "Bayyu S Calderioz", password: "0126" },
+            "0127": { name: "Anderson Altheo", password: "0127" },
+            "0128": { name: "SMOKE WISE", password: "0128" },
+            "0129": { name: "Edward Teach", password: "0129" },
+            "0130": { name: "Hanita Roselyn", password: "0130" },
+            "0131": { name: "Kim Hayakawa", password: "0131" },
+            "0132": { name: "Paijo Dirojo", password: "0132" },
+            "0133": { name: "Nyong Wong", password: "0133" },
+            "0134": { name: "Adiyatma Mahavir Bagaskara", password: "0134" },
+            "0135": { name: "Ricko Jordan", password: "0135" },
+            "0136": { name: "Aiden Atmadja", password: "0136" },
+            "0137": { name: "Juan Gaviria", password: "0137" },
+            "0138": { name: "Logan D Silva", password: "0138" },
+            "0139": { name: "Julian Rothschild", password: "0139" },
+            "0140": { name: "Tema Burjo", password: "0140" },
+            "0141": { name: "Joel Gato", password: "0141" },
+            "0142": { name: "Sugeng Winardi", password: "0142" },
+            "0143": { name: "Rohaan Hazeem", password: "0143" },
+            "0144": { name: "CODY DAENG", password: "0144" },
+            "0145": { name: "Joni Kencrot", password: "0145" },
+            "0146": { name: "Cristiano Sutisna", password: "0146" },
+            "0147": { name: "Hosea Kutabarat", password: "0147" },
+            "0148": { name: "Hugo Rizokov", password: "0148" },
+            "0149": { name: "Emir Kaan", password: "0149" },
+            "0150": { name: "Dudunwati Kusmini", password: "0150" },
+            "0151": { name: "Luz Galante", password: "0151" },
+            "0152": { name: "Dzuki Meikizuki", password: "0152" },
+            "0153": { name: "Thor Lana", password: "0153" },
+            "0154": { name: "Ahmad Sanusi", password: "0154" },
+            "0155": { name: "Ray Ashford", password: "0155" },
+            "0156": { name: "William Castellano", password: "0156" },
+            "0157": { name: "Alicia L. Keenan", password: "0157" },
+            "0158": { name: "Tan Ackeric", password: "0158" },
+            "0159": { name: "Ippang Labonga", password: "0159" },
+            "0160": { name: "Andrew Lith", password: "0160" },
+            "0161": { name: "Bayu Gonzali", password: "0161" },
+            "0162": { name: "Isat Solihin", password: "0162" },
+            "0163": { name: "AZIZ ATHARRAZKA", password: "0163" },
+            "0164": { name: "Tere Chana", password: "0164" },
+            "0165": { name: "Shirei Tanaka", password: "0165" },
+            "0166": { name: "John Sterling", password: "0166" },
+            "0167": { name: "Leviathan D' Aragon.", password: "0167" },
+            "0168": { name: "Arrowgun Balotelli", password: "0168" },
+            "0169": { name: "Mahmudin Galatama", password: "0169" },
+            "0170": { name: "Maxwell Weasley", password: "0170" },
+            "0171": { name: "Zoey Alvaro", password: "0171" },
+            "0172": { name: "John Smith", password: "0172" },
+            "0173": { name: "Little Envy", password: "0173" },
+            "0174": { name: "Maru Halus", password: "0174" },
+            "0175": { name: "Lloyd Luciven", password: "0175" },
+            "0176": { name: "Zeefela F Amberlyne", password: "0176" },
+            "0177": { name: "TABAH KENYAH MAHAN", password: "0177" },
+            "0178": { name: "Alvaris Johny", password: "0178" },
+            "0179": { name: "Kyora Van Eilish", password: "0179" },
+            "0180": { name: "White SantaCrooz", password: "0180" },
+            "0181": { name: "Jessko Centenario", password: "0181" },
+            "0182": { name: "Richard Garrison", password: "0182" },
+            "0183": { name: "Michella Clarrynne Samantha", password: "0183" },
+            "0184": { name: "Morgan Rowles", password: "0184" },
+            "0185": { name: "J Bie", password: "0185" },
+            "0186": { name: "Fernando Bryan", password: "0186" },
+            "0187": { name: "Junet Scofield", password: "0187" }
+        };
 
-        // Simulate IP detection
-        document.getElementById('userIP').textContent = '192.168.1.' + Math.floor(Math.random() * 255);
-
-        // Fingerprint scanner functionality
-        const scanner = document.getElementById('fingerprintScanner');
-        const checkInBtn = document.getElementById('checkInBtn');
-        const checkOutBtn = document.getElementById('checkOutBtn');
-        const scanResult = document.getElementById('scanResult');
-
-        function simulateFingerprint(action) {
-            if (!isUserLoggedIn) {
-                alert('Silakan login terlebih dahulu!');
-                return;
-            }
-
-            scanner.classList.add('scanning');
-            scanResult.className = 'mt-4 p-3 rounded-lg bg-blue-100 text-blue-800';
-            scanResult.textContent = '🔍 Memindai sidik jari...';
-            scanResult.classList.remove('hidden');
-
-            setTimeout(() => {
-                scanner.classList.remove('scanning');
-                const success = Math.random() > 0.1; // 90% success rate
-                
-                if (success) {
-                    scanResult.className = 'mt-4 p-3 rounded-lg bg-green-100 text-green-800';
-                    scanResult.textContent = `✅ ${action} berhasil! Waktu: ${new Date().toLocaleTimeString('id-ID')}`;
-                    
-                    // Update duty hours tracking
-                    if (currentUser) {
-                        if (action === 'Check In') {
-                            currentUser.checkInTime = new Date();
-                            const current = parseInt(document.getElementById('totalPresent').textContent);
-                            document.getElementById('totalPresent').textContent = current + 1;
-                        } else if (action === 'Check Out' && currentUser.checkInTime) {
-                            const checkOutTime = new Date();
-                            const workMinutes = Math.floor((checkOutTime - currentUser.checkInTime) / (1000 * 60));
-                            
-                            // Update duty hours
-                            currentUser.dutyHours.today += workMinutes;
-                            currentUser.dutyHours.week += workMinutes;
-                            currentUser.dutyHours.month += workMinutes;
-                            
-                            currentUser.checkInTime = null;
-                            updateDutyHours();
-                        }
-                    }
-                    
-                    // Save attendance record to database
-                    const attendanceRecord = {
-                        userId: currentUser?.id,
-                        username: currentUser?.username,
-                        fullName: currentUser?.fullName,
-                        action: action,
-                        timestamp: new Date().toISOString(),
-                        ip: document.getElementById('userIP').textContent,
-                        workMinutes: action === 'Check Out' && currentUser?.checkInTime ? 
-                            Math.floor((new Date() - currentUser.checkInTime) / (1000 * 60)) : 0
-                    };
-                    
-                    // Add to activity log
-                    activityLog.push(attendanceRecord);
-                    
-                    // Update displays
-                    updateActivityLog();
-                    updateWeeklyUserPerformance();
-                    
-                    // Save to database in background
-                    saveToDatabase(attendanceRecord, 'attendance').then(result => {
-                        console.log('Attendance saved to database:', result);
-                    });
-                    
-                    // Sync attendance data to all networks
-                    setTimeout(() => {
-                        scanResult.textContent += ' 🌐 Menyinkronkan ke semua server...';
-                        
-                        syncToAllNetworks({
-                            user: currentUser,
-                            action: action,
-                            timestamp: new Date(),
-                            ip: document.getElementById('userIP').textContent
-                        }, 'attendance').then(() => {
-                            scanResult.textContent = scanResult.textContent.replace('Menyinkronkan ke semua server...', 'Tersinkron ke semua perangkat!');
-                        });
-                    }, 1000);
-                } else {
-                    scanResult.className = 'mt-4 p-3 rounded-lg bg-red-100 text-red-800';
-                    scanResult.textContent = '❌ Sidik jari tidak dikenali. Silakan coba lagi.';
-                }
-            }, 2000);
-        }
-
-        // Update duty hours display
-        function updateDutyHours() {
-            if (currentUser) {
-                document.getElementById('todayHours').textContent = formatMinutesToHours(currentUser.dutyHours.today);
-                document.getElementById('weekHours').textContent = formatMinutesToHours(currentUser.dutyHours.week);
-                document.getElementById('monthHours').textContent = formatMinutesToHours(currentUser.dutyHours.month);
-            } else {
-                document.getElementById('todayHours').textContent = '0 jam 0 menit';
-                document.getElementById('weekHours').textContent = '0 jam 0 menit';
-                document.getElementById('monthHours').textContent = '0 jam 0 menit';
-            }
-        }
-
-        // Format minutes to hours and minutes
-        function formatMinutesToHours(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${hours} jam ${mins} menit`;
-        }
-
-        // Export to Google Sheets functionality
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            if (!currentUser) {
-                alert('Silakan pilih user terlebih dahulu!');
-                return;
-            }
-
-            // Simulate export process
-            const exportBtn = document.getElementById('exportBtn');
-            const originalText = exportBtn.textContent;
-            
-            exportBtn.textContent = '📤 Mengexport...';
-            exportBtn.disabled = true;
-            
-            setTimeout(() => {
-                // Create CSV data
-                const csvData = generateCSVData();
-                downloadCSV(csvData, `duty_hours_${currentUser.username}_${new Date().toISOString().split('T')[0]}.csv`);
-                
-                exportBtn.textContent = originalText;
-                exportBtn.disabled = false;
-                
-                alert('Data berhasil diexport! File CSV telah diunduh.');
-            }, 2000);
-        });
-
-        // Generate CSV data for export
-        function generateCSVData() {
-            const headers = ['Nama', 'Username', 'Email', 'Departemen', 'Posisi', 'Jam Hari Ini', 'Jam Minggu Ini', 'Jam Bulan Ini', 'Tanggal Export'];
-            const rows = users.map(user => [
-                user.fullName,
-                user.username,
-                user.email,
-                user.department,
-                user.position,
-                formatMinutesToHours(user.dutyHours.today),
-                formatMinutesToHours(user.dutyHours.week),
-                formatMinutesToHours(user.dutyHours.month),
-                new Date().toLocaleDateString('id-ID')
-            ]);
-            
-            return [headers, ...rows].map(row => row.join(',')).join('\n');
-        }
-
-        // Download CSV file
-        function downloadCSV(csvData, filename) {
-            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                link.setAttribute('download', filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
-
-        // Update current user when selection changes
-        document.getElementById('userSelect').addEventListener('change', (e) => {
-            if (isUserLoggedIn) {
-                currentUser = users.find(u => u.username === e.target.value) || users[0];
-                updateDutyHours();
-            }
-        });
-
-        checkInBtn.addEventListener('click', () => simulateFingerprint('Check In'));
-        checkOutBtn.addEventListener('click', () => simulateFingerprint('Check Out'));
-
-        scanner.addEventListener('click', () => {
-            simulateFingerprint('Scan');
-        });
-
-        // Admin panel toggle
-        const adminToggle = document.getElementById('adminToggle');
-        const adminContent = document.getElementById('adminContent');
-        let isAdminLoggedIn = false;
-
-        adminToggle.addEventListener('click', () => {
-            if (!isAdminLoggedIn) {
-                const username = prompt('Masukkan username admin:');
-                if (username === 'joseph') {
-                    const password = prompt('Masukkan password admin:');
-                    if (password === 'joseph123') {
-                        isAdminLoggedIn = true;
-                        adminContent.classList.remove('hidden');
-                        adminToggle.textContent = '🔓 Logout Admin';
-                        adminToggle.className = 'bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold transition duration-300';
-                    } else {
-                        alert('Password salah!');
-                    }
-                } else {
-                    alert('Username salah!');
-                }
-            } else {
-                isAdminLoggedIn = false;
-                adminContent.classList.add('hidden');
-                adminToggle.textContent = '🔐 Login Admin';
-                adminToggle.className = 'admin-panel text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition duration-300';
-            }
-        });
-
-        // Simulate real-time updates
-        setInterval(() => {
-            // Random activity updates
-            if (Math.random() > 0.95) {
-                const activities = document.querySelectorAll('.bg-green-50, .bg-red-50, .bg-blue-50');
-                if (activities.length > 0) {
-                    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
-                    randomActivity.style.transform = 'scale(1.02)';
-                    setTimeout(() => {
-                        randomActivity.style.transform = 'scale(1)';
-                    }, 500);
-                }
-            }
-        }, 5000);
-
-        // Simulate network status updates
-        setInterval(() => {
-            const networkIndicators = document.querySelectorAll('.text-2xl');
-            networkIndicators.forEach(indicator => {
-                if (Math.random() > 0.98) {
-                    indicator.textContent = indicator.textContent === '🟢' ? '🟡' : '🟢';
-                }
-            });
-        }, 10000);
-
-        // Database configuration
-        const DATABASE_URL = 'https://script.google.com/macros/s/AKfycbwRG-817R61WE1Ju4cZ9uDRM1DSmE4O4Zl8_XZjxTOA6HBRj7NUrxCJ0YkBBrkhV9zH/exec';
-
-        // Network synchronization system
-        const networkServers = [
-            { name: 'Server Utama', ip: '192.168.1.10', status: 'online' },
-            { name: 'Server Backup', ip: '192.168.1.11', status: 'standby' },
-            { name: 'Database Server', ip: '192.168.1.12', status: 'online' },
-            { name: 'Cloud Sync', ip: '203.142.67.89', status: 'online' },
-            { name: 'Regional Server', ip: '10.0.0.15', status: 'online' },
-            { name: 'Google Database', ip: 'script.google.com', status: 'online' }
-        ];
-
-        // Database functions with enhanced user account handling
-        async function saveToDatabase(data, action) {
-            try {
-                // Prepare payload with specific handling for user accounts
-                const payload = {
-                    action: action,
-                    data: data,
-                    timestamp: new Date().toISOString(),
-                    source: 'MotionLide_Attendance_System'
-                };
-
-                // Special handling for user account creation
-                if (action === 'create_user') {
-                    payload.userAccount = {
-                        id: data.userData.id,
-                        username: data.userData.username,
-                        fullName: data.userData.fullName,
-                        email: data.userData.email,
-                        department: data.userData.department,
-                        position: data.userData.position,
-                        createdAt: data.userData.createdAt,
-                        ipAddress: data.userData.ipAddress,
-                        status: 'active',
-                        accountType: 'employee'
-                    };
-                    
-                    console.log('Sending user account to Google Database:', payload.userAccount);
-                }
-
-                const response = await fetch(DATABASE_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                // Log successful database operation
-                console.log(`Database operation ${action} sent successfully to:`, DATABASE_URL);
-                
-                return { 
-                    success: true, 
-                    message: `Data ${action} berhasil disimpan ke Google Database`,
-                    timestamp: new Date().toISOString()
-                };
-            } catch (error) {
-                console.error('Database error:', error);
-                return { 
-                    success: false, 
-                    message: 'Gagal menyimpan ke database: ' + error.message,
-                    error: error
-                };
-            }
-        }
-
-        async function loadFromDatabase() {
-            try {
-                const response = await fetch(DATABASE_URL + '?action=load', {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
-                
-                // Since we're using no-cors, we can't read the response
-                // But the request will still be sent to the server
-                return { success: true, message: 'Request sent to database' };
-            } catch (error) {
-                console.error('Database load error:', error);
-                return { success: false, message: 'Gagal memuat dari database' };
-            }
-        }
-
-        // User management system with network sync
-        let users = [
-            { id: 1, username: 'guest', fullName: 'Guest User', email: 'guest@motionlide.com', password: 'guest123', department: 'General', position: 'Visitor', dutyHours: { today: 0, week: 0, month: 0 }, checkInTime: null, syncStatus: 'synced' }
-        ];
-
-        // Activity log system
-        let activityLog = [];
-
-        // Network synchronization function with database integration
-        function syncToAllNetworks(userData, action = 'update') {
-            return new Promise(async (resolve) => {
-                const syncNotification = document.createElement('div');
-                syncNotification.className = 'fixed top-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-                syncNotification.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                        <div>
-                            <div class="font-semibold">🌐 Sinkronisasi Jaringan</div>
-                            <div class="text-sm opacity-90">Menyinkronkan ke ${networkServers.length} server...</div>
-                        </div>
-                    </div>
-                    <div class="mt-2 space-y-1" id="syncProgress">
-                        ${networkServers.map(server => `
-                            <div class="flex items-center justify-between text-xs">
-                                <span>${server.name} (${server.ip})</span>
-                                <span id="sync-${server.ip.replace(/\./g, '-').replace(/script-google-com/g, 'google-db')}" class="text-yellow-300">⏳ Menunggu</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                document.body.appendChild(syncNotification);
-
-                // First, save to Google Database
-                const dbResult = await saveToDatabase(userData, action);
-                
-                // Simulate sync to each server
-                let completedSyncs = 0;
-                networkServers.forEach((server, index) => {
-                    setTimeout(async () => {
-                        const statusElement = document.getElementById(`sync-${server.ip.replace(/\./g, '-').replace(/script-google-com/g, 'google-db')}`);
-                        if (statusElement) {
-                            let success = Math.random() > 0.05; // 95% success rate for regular servers
-                            
-                            // Special handling for Google Database
-                            if (server.name === 'Google Database') {
-                                success = dbResult.success;
-                                if (success) {
-                                    statusElement.textContent = '✅ Database OK';
-                                    statusElement.className = 'text-green-300';
-                                } else {
-                                    statusElement.textContent = '⚠️ DB Error';
-                                    statusElement.className = 'text-yellow-300';
-                                }
-                            } else {
-                                if (success) {
-                                    statusElement.textContent = '✅ Berhasil';
-                                    statusElement.className = 'text-green-300';
-                                } else {
-                                    statusElement.textContent = '❌ Gagal';
-                                    statusElement.className = 'text-red-300';
-                                }
-                            }
-                        }
-                        
-                        completedSyncs++;
-                        if (completedSyncs === networkServers.length) {
-                            setTimeout(() => {
-                                syncNotification.innerHTML = `
-                                    <div class="flex items-center space-x-3">
-                                        <div class="text-green-400 text-xl">✅</div>
-                                        <div>
-                                            <div class="font-semibold">Sinkronisasi Selesai!</div>
-                                            <div class="text-sm opacity-90">Data tersimpan ke Google Database & semua server</div>
-                                        </div>
-                                    </div>
-                                `;
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(syncNotification);
-                                    resolve(true);
-                                }, 2000);
-                            }, 500);
-                        }
-                    }, (index + 1) * 800 + Math.random() * 500);
-                });
-            });
-        }
-
-        // User login state
-        let isUserLoggedIn = false;
         let currentUser = null;
+        let selectedShift = null;
+        let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || {};
+        let spreadsheetData = JSON.parse(localStorage.getItem('spreadsheetData')) || {};
 
-        // Update user select dropdown
-        function updateUserSelect() {
-            const userSelect = document.getElementById('userSelect');
-            userSelect.innerHTML = '';
-            users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.username;
-                option.textContent = `${user.fullName} (${user.username})`;
-                userSelect.appendChild(option);
-            });
-        }
-
-        // Update admin user list
-        function updateAdminUserList() {
-            const userListContainer = document.getElementById('adminUserList');
-            if (!userListContainer) return;
-            
-            userListContainer.innerHTML = '';
-            
-            users.forEach(user => {
-                if (user.username === 'guest') return; // Skip guest user in admin panel
-                
-                const userDiv = document.createElement('div');
-                userDiv.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow';
-                userDiv.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            ${user.fullName.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="flex-1">
-                            <div class="font-semibold text-gray-800">${user.fullName}</div>
-                            <div class="text-sm text-gray-600">${user.email}</div>
-                            <div class="text-xs text-gray-500">${user.department} • ${user.position}</div>
-                            <div class="text-xs text-blue-600 font-medium">
-                                Minggu ini: ${formatMinutesToHours(user.dutyHours.week)} • 
-                                Bulan ini: ${formatMinutesToHours(user.dutyHours.month)}
-                            </div>
-                            <div class="text-xs ${user.syncStatus === 'synced' ? 'text-green-600' : user.syncStatus === 'syncing' ? 'text-yellow-600' : 'text-red-600'} font-medium">
-                                ${user.syncStatus === 'synced' ? '🌐 Tersinkron ke semua server' : user.syncStatus === 'syncing' ? '⏳ Sedang sinkronisasi...' : '❌ Gagal sinkronisasi'}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition duration-300" onclick="viewUserDetails(${user.id})">
-                            👁️ Detail
-                        </button>
-                        <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition duration-300" onclick="editUser(${user.id})">
-                            ✏️ Edit
-                        </button>
-                        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-300" onclick="deleteUser(${user.id})">
-                            🗑️ Hapus
-                        </button>
-                    </div>
-                `;
-                userListContainer.appendChild(userDiv);
-            });
-            
-            // Update admin stats
-            document.getElementById('adminTotalUsers').textContent = users.length - 1; // Exclude guest
-            document.getElementById('adminActiveToday').textContent = users.filter(u => u.dutyHours.today > 0).length;
-            
-            const totalWeekHours = users.reduce((sum, user) => sum + user.dutyHours.week, 0);
-            document.getElementById('adminTotalHours').textContent = Math.floor(totalWeekHours / 60);
-        }
-
-        // Update weekly statistics display
-        function updateWeeklyStats() {
-            const statsContainer = document.getElementById('weeklyStatsContainer');
-            const chartContainer = document.getElementById('weeklyChartContainer');
-            
-            if (!statsContainer || !chartContainer) return;
-            
-            // Calculate dynamic stats from actual user data
-            const activeUsers = users.filter(u => u.username !== 'guest');
-            const totalPresent = activeUsers.filter(u => u.dutyHours.week > 0).length;
-            const totalLate = Math.floor(totalPresent * 0.15); // Simulate 15% late rate
-            const totalAbsent = Math.max(0, activeUsers.length - totalPresent);
-            
-            // Update stats cards
-            statsContainer.innerHTML = `
-                <div class="stats-card text-white p-6 rounded-xl text-center">
-                    <div class="text-3xl font-bold">${totalPresent}</div>
-                    <div class="text-sm opacity-90">Total Hadir</div>
-                </div>
-                <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-xl text-center">
-                    <div class="text-3xl font-bold">${totalLate}</div>
-                    <div class="text-sm opacity-90">Terlambat</div>
-                </div>
-                <div class="bg-gradient-to-r from-gray-400 to-gray-600 text-white p-6 rounded-xl text-center">
-                    <div class="text-3xl font-bold">${totalAbsent}</div>
-                    <div class="text-sm opacity-90">Tidak Hadir</div>
-                </div>
-            `;
-            
-            // Generate dynamic weekly chart
-            const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-            const attendanceRates = days.map(() => {
-                if (activeUsers.length === 0) return 0;
-                return Math.floor((totalPresent / activeUsers.length) * 100 * (0.8 + Math.random() * 0.4));
-            });
-            
-            chartContainer.innerHTML = attendanceRates.map((rate, index) => {
-                let colorClass = 'bg-green-500';
-                if (rate < 70) colorClass = 'bg-red-500';
-                else if (rate < 85) colorClass = 'bg-yellow-500';
-                else if (rate > 95) colorClass = 'bg-blue-500';
-                
-                return `
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium w-16">${days[index]}</span>
-                        <div class="flex-1 mx-4 bg-gray-200 rounded-full h-4">
-                            <div class="${colorClass} h-4 rounded-full" style="width: ${rate}%"></div>
-                        </div>
-                        <span class="text-sm text-gray-600">${rate}%</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Update weekly user performance display
-        function updateWeeklyUserPerformance() {
-            const performanceContainer = document.getElementById('weeklyUserPerformance');
-            if (!performanceContainer) return;
-            
-            performanceContainer.innerHTML = '';
-            
-            // Filter out guest user and sort by weekly hours
-            const activeUsers = users.filter(u => u.username !== 'guest').sort((a, b) => b.dutyHours.week - a.dutyHours.week);
-            
-            if (activeUsers.length === 0) {
-                performanceContainer.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="text-4xl mb-2">👥</div>
-                        <div class="font-medium">Belum ada user terdaftar</div>
-                        <div class="text-sm">Daftarkan user baru untuk melihat performa</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            activeUsers.forEach((user, index) => {
-                const weekHours = Math.floor(user.dutyHours.week / 60);
-                const attendanceRate = weekHours > 0 ? Math.min(100, Math.floor((weekHours / 40) * 100)) : 0;
-                
-                let performanceLevel = 'Average';
-                let colorClass = 'yellow';
-                
-                if (attendanceRate >= 95) {
-                    performanceLevel = '⭐ Excellent';
-                    colorClass = 'green';
-                } else if (attendanceRate >= 85) {
-                    performanceLevel = '👍 Good';
-                    colorClass = 'blue';
-                } else if (attendanceRate >= 70) {
-                    performanceLevel = '⚠️ Average';
-                    colorClass = 'yellow';
-                } else {
-                    performanceLevel = '📉 Below Average';
-                    colorClass = 'red';
-                }
-                
-                const userDiv = document.createElement('div');
-                userDiv.className = `flex items-center justify-between p-3 bg-${colorClass}-50 rounded-lg border-l-4 border-${colorClass}-500`;
-                userDiv.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-${colorClass}-500 rounded-full flex items-center justify-center text-white font-semibold">
-                            ${user.fullName.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <div class="font-medium text-${colorClass}-800">${user.fullName}</div>
-                            <div class="text-sm text-${colorClass}-600">${weekHours} jam • ${attendanceRate}% hadir</div>
-                        </div>
-                    </div>
-                    <div class="text-${colorClass}-600 font-semibold">${performanceLevel}</div>
-                `;
-                performanceContainer.appendChild(userDiv);
-            });
-        }
-
-        // Update activity log display
-        function updateActivityLog() {
-            const logContainer = document.getElementById('activityLogContainer');
-            if (!logContainer) return;
-            
-            logContainer.innerHTML = '';
-            
-            if (activityLog.length === 0) {
-                logContainer.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <div class="text-4xl mb-2">📋</div>
-                        <div class="font-medium">Belum ada aktivitas</div>
-                        <div class="text-sm">Log aktivitas akan muncul setelah ada check in/out</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Show latest 10 activities
-            const recentActivities = activityLog.slice(-10).reverse();
-            
-            recentActivities.forEach(activity => {
-                const colorClass = activity.action === 'Check In' ? 'green' : 'red';
-                const icon = activity.action === 'Check In' ? '✅' : '❌';
-                
-                const activityDiv = document.createElement('div');
-                activityDiv.className = `flex items-center justify-between p-3 bg-${colorClass}-50 rounded-lg border-l-4 border-${colorClass}-500`;
-                activityDiv.innerHTML = `
-                    <div>
-                        <div class="font-medium text-${colorClass}-800">${activity.fullName} - ${activity.action}</div>
-                        <div class="text-sm text-${colorClass}-600">IP: ${activity.ip} • Meta Auth: ✅</div>
-                        <div class="text-xs text-${colorClass}-500">
-                            ${activity.action === 'Check In' ? 'Jam kerja dimulai' : 'Total kerja: ' + formatMinutesToHours(activity.workMinutes || 0)}
-                        </div>
-                    </div>
-                    <div class="text-sm text-${colorClass}-600">${new Date(activity.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
-                `;
-                logContainer.appendChild(activityDiv);
-            });
-        }
-
-        // Initialize system and load data from database
-        async function initializeSystem() {
-            // Show loading indicator
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'fixed top-4 left-4 bg-blue-600 text-white p-3 rounded-lg shadow-lg z-50';
-            loadingDiv.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span class="text-sm">🌐 Memuat data dari Google Database...</span>
-                </div>
-            `;
-            document.body.appendChild(loadingDiv);
-            
-            try {
-                // Attempt to load data from database
-                const result = await loadFromDatabase();
-                console.log('Database load result:', result);
-                
-                // Update loading message
-                loadingDiv.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <div class="text-green-400">✅</div>
-                        <span class="text-sm">Database terhubung!</span>
-                    </div>
-                `;
-                
-                setTimeout(() => {
-                    document.body.removeChild(loadingDiv);
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Failed to load from database:', error);
-                loadingDiv.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <div class="text-yellow-400">⚠️</div>
-                        <span class="text-sm">Menggunakan data lokal</span>
-                    </div>
-                `;
-                
-                setTimeout(() => {
-                    document.body.removeChild(loadingDiv);
-                }, 2000);
-            }
-            
-            // Initialize user lists and displays
-            updateUserSelect();
-            updateAdminUserList();
-            updateWeeklyStats();
-            updateWeeklyUserPerformance();
-            updateActivityLog();
-        }
-        
-        // Start system initialization
-        initializeSystem();
-
-        // User login functionality
-        const userLoginBtn = document.getElementById('userLoginBtn');
-        const userLoginModal = document.getElementById('userLoginModal');
-        const closeUserModal = document.getElementById('closeUserModal');
-        const cancelUserLogin = document.getElementById('cancelUserLogin');
-        const userLoginForm = document.getElementById('userLoginForm');
-        const loginStatus = document.getElementById('loginStatus');
-
-        userLoginBtn.addEventListener('click', () => {
-            if (!isUserLoggedIn) {
-                userLoginModal.classList.remove('hidden');
-            } else {
-                // Logout
-                isUserLoggedIn = false;
-                currentUser = null;
-                userLoginBtn.textContent = '🔐 Login User';
-                userLoginBtn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300';
-                loginStatus.textContent = '🔒 Belum login';
-                loginStatus.className = 'text-red-600';
-                
-                // Disable fingerprint buttons
-                document.getElementById('checkInBtn').disabled = true;
-                document.getElementById('checkOutBtn').disabled = true;
-                
-                updateDutyHours();
-            }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTodayDate();
+            setInterval(updateTodayDate, 60000); // Update every minute
+            initializeShiftButtons();
         });
 
-        closeUserModal.addEventListener('click', () => {
-            userLoginModal.classList.add('hidden');
-            userLoginForm.reset();
-        });
+        // Initialize shift buttons
+        function initializeShiftButtons() {
+            const shiftButtons = document.querySelectorAll('.shift-btn');
+            shiftButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    shiftButtons.forEach(b => b.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-200'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('ring-2', 'ring-blue-500', 'bg-blue-200');
+                    
+                    selectedShift = this.dataset.shift;
+                    document.getElementById('selectedShift').textContent = `Shift ${selectedShift}`;
+                    
+                    // Enable finger buttons
+                    document.getElementById('fingerInBtn').disabled = false;
+                    document.getElementById('fingerOutBtn').disabled = false;
+                    document.getElementById('fingerInBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('fingerOutBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                });
+            });
+        }
 
-        cancelUserLogin.addEventListener('click', () => {
-            userLoginModal.classList.add('hidden');
-            userLoginForm.reset();
-        });
-
-        userLoginForm.addEventListener('submit', (e) => {
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Find user with matching credentials
-            const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
-                isUserLoggedIn = true;
-                currentUser = user;
-                
-                userLoginBtn.textContent = `🔓 Logout (${user.fullName})`;
-                userLoginBtn.className = 'w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300';
-                loginStatus.textContent = `✅ Login sebagai ${user.fullName}`;
-                loginStatus.className = 'text-green-600';
-                
-                // Enable fingerprint buttons
-                document.getElementById('checkInBtn').disabled = false;
-                document.getElementById('checkOutBtn').disabled = false;
-                
-                // Update user select to current user
-                document.getElementById('userSelect').value = user.username;
-                
-                userLoginModal.classList.add('hidden');
-                userLoginForm.reset();
-                
-                updateDutyHours();
-                alert(`Login berhasil! Selamat datang ${user.fullName}.\nAnda sekarang dapat menggunakan fingerprint scanner.`);
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (employees[username] && employees[username].password === password) {
+                currentUser = { id: username, name: employees[username].name };
+                showUserDashboard();
             } else {
                 alert('Username atau password salah!');
             }
         });
 
-        // Signup modal functionality
-        const signupBtn = document.getElementById('signupBtn');
-        const signupModal = document.getElementById('signupModal');
-        const closeSignupModal = document.getElementById('closeSignupModal');
-        const cancelSignup = document.getElementById('cancelSignup');
-        const signupForm = document.getElementById('signupForm');
-
-        signupBtn.addEventListener('click', () => {
-            signupModal.classList.remove('hidden');
+        // Admin login
+        document.getElementById('adminLoginBtn').addEventListener('click', function() {
+            const adminPass = prompt('Masukkan password administrator:');
+            if (adminPass === 'admin123') {
+                showAdminDashboard();
+            } else {
+                alert('Password administrator salah!');
+            }
         });
 
-        closeSignupModal.addEventListener('click', () => {
-            signupModal.classList.add('hidden');
-            signupForm.reset();
-        });
+        // Show user dashboard
+        function showUserDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('userDashboard').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userID').textContent = `ID: ${currentUser.id}`;
+            updateUserStatus();
+        }
 
-        cancelSignup.addEventListener('click', () => {
-            signupModal.classList.add('hidden');
-            signupForm.reset();
-        });
+        // Show admin dashboard
+        function showAdminDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            updateAdminStats();
+            loadAttendanceTable();
+        }
 
-        signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Finger In
+        document.getElementById('fingerInBtn').addEventListener('click', function() {
+            if (!selectedShift) {
+                alert('Silakan pilih shift terlebih dahulu!');
+                return;
+            }
             
-            const formData = {
-                fullName: document.getElementById('fullName').value,
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('userPassword').value,
-                confirmPassword: document.getElementById('confirmPassword').value,
-                department: document.getElementById('department').value,
-                position: document.getElementById('position').value
-            };
-
-            // Validate password confirmation
-            if (formData.password !== formData.confirmPassword) {
-                alert('Password dan konfirmasi password tidak cocok!');
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            if (!attendanceData[currentUser.id]) {
+                attendanceData[currentUser.id] = {};
+            }
+            
+            if (!attendanceData[currentUser.id][today]) {
+                attendanceData[currentUser.id][today] = {};
+            }
+            
+            if (attendanceData[currentUser.id][today].in) {
+                alert('Anda sudah melakukan finger in hari ini!');
                 return;
             }
+            
+            attendanceData[currentUser.id][today].in = now.toLocaleTimeString('id-ID');
+            attendanceData[currentUser.id][today].name = currentUser.name;
+            attendanceData[currentUser.id][today].shift = selectedShift;
+            
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            
+            alert(`Finger In berhasil untuk Shift ${selectedShift}!`);
+            updateUserStatus();
+        });
 
-            if (formData.password.length < 6) {
-                alert('Password minimal 6 karakter!');
+        // Finger Out
+        document.getElementById('fingerOutBtn').addEventListener('click', function() {
+            if (!selectedShift) {
+                alert('Silakan pilih shift terlebih dahulu!');
                 return;
             }
-
-            // Check if username already exists
-            if (users.find(user => user.username === formData.username)) {
-                alert('Username sudah digunakan! Silakan pilih username lain.');
+            
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            if (!attendanceData[currentUser.id] || !attendanceData[currentUser.id][today] || !attendanceData[currentUser.id][today].in) {
+                alert('Anda harus melakukan finger in terlebih dahulu!');
                 return;
             }
-
-            // Show loading state
-            const submitBtn = signupForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '💾 Menyimpan ke Database...';
-            submitBtn.disabled = true;
-
-            // Create new user object with complete data for database (exclude confirmPassword)
-            const { confirmPassword, ...userData } = formData;
-            const newUser = {
-                id: users.length + 1,
-                ...userData,
-                dutyHours: { today: 0, week: 0, month: 0 },
-                checkInTime: null,
-                syncStatus: 'syncing',
-                createdAt: new Date().toISOString(),
-                createdBy: 'system',
-                ipAddress: document.getElementById('userIP').textContent,
-                registrationSource: 'MotionLide_Attendance_System'
-            };
-
-            try {
-                // Save new user account to Google Database first
-                const dbResult = await saveToDatabase({
-                    action: 'create_user',
-                    userData: newUser,
-                    timestamp: new Date().toISOString(),
-                    source: 'user_registration'
-                }, 'create_user');
-
-                console.log('New user saved to Google Database:', dbResult);
-                
-                // Add to local users array
-                users.push(newUser);
-                updateUserSelect();
-                updateAdminUserList();
-                updateWeeklyStats();
-                updateWeeklyUserPerformance();
-                
-                // Close modal and reset form
-                signupModal.classList.add('hidden');
-                signupForm.reset();
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                
-                // Show success message with database confirmation
-                const successMessage = `✅ AKUN BARU BERHASIL DIBUAT!
-
-👤 Nama: ${formData.fullName}
-🔑 Username: ${formData.username}
-📧 Email: ${formData.email}
-🏢 Departemen: ${formData.department}
-💼 Posisi: ${formData.position}
-
-🔐 LOGIN INFO:
-✅ Username: ${formData.username}
-✅ Password: ${formData.password}
-
-🌐 STATUS DATABASE:
-✅ Tersimpan di Google Database
-✅ URL: ${DATABASE_URL}
-✅ Timestamp: ${new Date().toLocaleString('id-ID')}
-✅ ID User: ${newUser.id}
-
-📊 SINKRONISASI:
-✅ Data tersinkronisasi ke semua server
-✅ Akun siap digunakan untuk login & absensi`;
-                
-                alert(successMessage);
-                
-                // Then sync to all networks for redundancy
-                syncToAllNetworks(newUser, 'create_user').then(() => {
-                    newUser.syncStatus = 'synced';
-                    updateAdminUserList();
-                    
-                    // Show final confirmation notification
-                    const finalNotification = document.createElement('div');
-                    finalNotification.className = 'fixed bottom-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-                    finalNotification.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <div class="text-green-200 text-xl">🎉</div>
-                            <div>
-                                <div class="font-semibold">Akun Baru Tersimpan!</div>
-                                <div class="text-sm opacity-90">${formData.fullName} terdaftar di Google Database</div>
-                                <div class="text-xs opacity-75 mt-1">✅ Username: ${formData.username}</div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(finalNotification);
-                    
-                    setTimeout(() => {
-                        document.body.removeChild(finalNotification);
-                    }, 5000);
-                });
-
-            } catch (error) {
-                console.error('Error saving user to database:', error);
-                
-                // Reset button state
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                
-                // Show error but still create user locally
-                alert(`⚠️ User ${formData.fullName} dibuat secara lokal.\n\nError database: ${error.message}\n\nData akan disinkronkan ulang secara otomatis.`);
-                
-                // Add to local users array anyway
-                users.push(newUser);
-                updateUserSelect();
-                updateAdminUserList();
-                
-                signupModal.classList.add('hidden');
-                signupForm.reset();
+            
+            if (attendanceData[currentUser.id][today].out) {
+                alert('Anda sudah melakukan finger out hari ini!');
+                return;
             }
+            
+            attendanceData[currentUser.id][today].out = now.toLocaleTimeString('id-ID');
+            
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            
+            alert(`Finger Out berhasil untuk Shift ${selectedShift}!`);
+            updateUserStatus();
         });
 
-        // Admin functionality handlers
-        document.getElementById('addUserBtn').addEventListener('click', () => {
-            signupModal.classList.remove('hidden');
-        });
-
-        document.getElementById('clearLogBtn').addEventListener('click', () => {
-            if (confirm('Yakin ingin menghapus semua log aktivitas?')) {
-                activityLog = [];
-                updateActivityLog();
-                alert('Log aktivitas berhasil dihapus!');
-            }
-        });
-
-        // User management functions
-        window.viewUserDetails = function(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                const details = `
-📋 DETAIL USER
-
-👤 Nama: ${user.fullName}
-📧 Email: ${user.email}
-🏢 Departemen: ${user.department}
-💼 Posisi: ${user.position}
-
-⏰ JAM DUTY:
-• Hari ini: ${formatMinutesToHours(user.dutyHours.today)}
-• Minggu ini: ${formatMinutesToHours(user.dutyHours.week)}
-• Bulan ini: ${formatMinutesToHours(user.dutyHours.month)}
-
-📊 STATUS:
-• Username: ${user.username}
-• Status: ${user.checkInTime ? 'Sedang bekerja' : 'Tidak aktif'}
-• Terakhir aktif: ${user.checkInTime ? 'Sekarang' : 'Tidak diketahui'}
-                `;
-                alert(details);
-            }
-        };
-
-        window.editUser = function(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                const newName = prompt('Nama baru:', user.fullName);
-                if (newName && newName.trim()) {
-                    const newEmail = prompt('Email baru:', user.email);
-                    if (newEmail && newEmail.trim()) {
-                        const newDepartment = prompt('Departemen baru:', user.department);
-                        if (newDepartment && newDepartment.trim()) {
-                            const newPosition = prompt('Posisi baru:', user.position);
-                            if (newPosition && newPosition.trim()) {
-                                user.fullName = newName.trim();
-                                user.email = newEmail.trim();
-                                user.department = newDepartment.trim();
-                                user.position = newPosition.trim();
-                                updateUserSelect();
-                                updateAdminUserList();
-                                updateWeeklyUserPerformance();
-                                alert('Data user berhasil diupdate!');
-                            }
-                        }
-                    }
+        // Update user status
+        function updateUserStatus() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayData = attendanceData[currentUser.id] && attendanceData[currentUser.id][today];
+            
+            if (todayData) {
+                document.getElementById('todayIn').textContent = todayData.in || '-';
+                document.getElementById('todayOut').textContent = todayData.out || '-';
+                document.getElementById('todayShift').textContent = todayData.shift ? `Shift ${todayData.shift}` : '-';
+                
+                if (todayData.in) {
+                    document.getElementById('fingerInTime').textContent = `Masuk: ${todayData.in}`;
                 }
-            }
-        };
-
-        window.deleteUser = function(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user && confirm(`Yakin ingin menghapus user "${user.fullName}"?\n\nData jam duty dan riwayat aktivitas akan hilang permanen!`)) {
-                // Save deletion to database
-                saveToDatabase({ userId: userId, action: 'delete' }, 'delete_user').then(result => {
-                    console.log('User deletion saved to database:', result);
-                });
-                
-                users = users.filter(u => u.id !== userId);
-                updateUserSelect();
-                updateAdminUserList();
-                updateWeeklyUserPerformance();
-                alert(`User "${user.fullName}" berhasil dihapus dari sistem dan database!`);
-            }
-        };
-
-        // Manual clean button handler
-        document.addEventListener('DOMContentLoaded', function() {
-            // Manual Clean Button
-            document.getElementById('manualCleanBtn')?.addEventListener('click', async () => {
-                const btn = document.getElementById('manualCleanBtn');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<span>🔄</span><span>Membersihkan...</span>';
-                btn.disabled = true;
-                
-                try {
-                    // Perform manual clean
-                    autoCleanWeeklySummary();
-                    
-                    // Save manual clean action to database
-                    await saveToDatabase({
-                        action: 'manual_clean_weekly',
-                        timestamp: new Date().toISOString(),
-                        triggeredBy: 'user_manual',
-                        cleanedData: {
-                            totalUsers: users.length - 1,
-                            activeUsers: users.filter(u => u.dutyHours.week > 0).length
-                        }
-                    }, 'manual_clean');
-                    
-                    // Show success notification
-                    const successNotification = document.createElement('div');
-                    successNotification.className = 'fixed top-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-                    successNotification.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <div class="text-green-200 text-xl">✅</div>
-                            <div>
-                                <div class="font-semibold">Pembersihan Manual Selesai!</div>
-                                <div class="text-sm opacity-90">Ringkasan mingguan diperbarui</div>
-                                <div class="text-xs opacity-75 mt-1">🌐 Tersimpan ke Google Database</div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(successNotification);
-                    
-                    setTimeout(() => {
-                        if (document.body.contains(successNotification)) {
-                            document.body.removeChild(successNotification);
-                        }
-                    }, 4000);
-                    
-                } catch (error) {
-                    alert('❌ Error saat pembersihan manual: ' + error.message);
+                if (todayData.out) {
+                    document.getElementById('fingerOutTime').textContent = `Keluar: ${todayData.out}`;
                 }
                 
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
-        });
-
-        // Database admin button handlers
-        document.addEventListener('DOMContentLoaded', function() {
-            // Export All Data
-            document.getElementById('exportAllDataBtn')?.addEventListener('click', async () => {
-                const btn = document.getElementById('exportAllDataBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '📤 Mengexport...';
-                btn.disabled = true;
-                
-                try {
-                    // Save all data to database
-                    await saveToDatabase({ users: users, exportType: 'full' }, 'export_all');
+                // Set selected shift if already recorded
+                if (todayData.shift) {
+                    selectedShift = todayData.shift;
+                    document.getElementById('selectedShift').textContent = `Shift ${selectedShift}`;
                     
-                    // Generate and download CSV
-                    const csvData = generateFullCSVData();
-                    downloadCSV(csvData, `motionlide_full_export_${new Date().toISOString().split('T')[0]}.csv`);
-                    
-                    alert('✅ Semua data berhasil diexport dan disimpan ke database!');
-                } catch (error) {
-                    alert('❌ Error saat export: ' + error.message);
-                }
-                
-                btn.textContent = originalText;
-                btn.disabled = false;
-            });
-
-            // Send Weekly Report
-            document.getElementById('sendWeeklyReportBtn')?.addEventListener('click', async () => {
-                const btn = document.getElementById('sendWeeklyReportBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '📧 Mengirim...';
-                btn.disabled = true;
-                
-                const weeklyReport = {
-                    week: new Date().toISOString().split('T')[0],
-                    totalUsers: users.length - 1,
-                    totalHours: users.reduce((sum, user) => sum + user.dutyHours.week, 0),
-                    attendanceRate: '92%',
-                    users: users.filter(u => u.username !== 'guest')
-                };
-                
-                await saveToDatabase(weeklyReport, 'weekly_report');
-                alert('📧 Laporan mingguan berhasil dikirim dan disimpan ke database!');
-                
-                btn.textContent = originalText;
-                btn.disabled = false;
-            });
-
-            // Reset Monthly Hours
-            document.getElementById('resetMonthlyHoursBtn')?.addEventListener('click', async () => {
-                if (confirm('⚠️ Yakin ingin reset semua jam duty bulanan?\n\nData bulan ini akan dihapus permanen!')) {
-                    const btn = document.getElementById('resetMonthlyHoursBtn');
-                    const originalText = btn.textContent;
-                    btn.textContent = '🔄 Mereset...';
-                    btn.disabled = true;
-                    
-                    // Save reset action to database
-                    await saveToDatabase({ 
-                        action: 'reset_monthly', 
-                        month: new Date().toISOString().split('T')[0],
-                        affectedUsers: users.length - 1
-                    }, 'reset_monthly');
-                    
-                    // Reset all users' monthly hours
-                    users.forEach(user => {
-                        user.dutyHours.month = 0;
+                    // Highlight the selected shift button
+                    const shiftButtons = document.querySelectorAll('.shift-btn');
+                    shiftButtons.forEach(btn => {
+                        btn.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-200');
+                        if (btn.dataset.shift === selectedShift) {
+                            btn.classList.add('ring-2', 'ring-blue-500', 'bg-blue-200');
+                        }
                     });
                     
-                    updateAdminUserList();
-                    alert('✅ Jam duty bulanan berhasil direset untuk semua user!');
+                    // Enable finger buttons
+                    document.getElementById('fingerInBtn').disabled = false;
+                    document.getElementById('fingerOutBtn').disabled = false;
+                    document.getElementById('fingerInBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('fingerOutBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            
+            // Update weekly hours summary
+            updateWeeklyHoursSummary();
+        }
+
+        // Calculate weekly hours summary
+        function updateWeeklyHoursSummary() {
+            if (!currentUser) return;
+            
+            const weekDates = getWeekDates();
+            let totalMinutes = 0;
+            let workingDays = 0;
+            const dailyHours = [];
+            
+            weekDates.forEach(date => {
+                const dateStr = date.toISOString().split('T')[0];
+                const dayData = attendanceData[currentUser.id] && attendanceData[currentUser.id][dateStr];
+                
+                const dayName = date.toLocaleDateString('id-ID', { weekday: 'short' });
+                const dayDate = date.getDate();
+                
+                if (dayData && dayData.in && dayData.out) {
+                    const minutes = calculateDurationInMinutes(dayData.in, dayData.out);
+                    totalMinutes += minutes;
+                    workingDays++;
                     
-                    btn.textContent = originalText;
-                    btn.disabled = false;
+                    const hours = Math.floor(minutes / 60);
+                    const mins = minutes % 60;
+                    dailyHours.push({
+                        day: `${dayName}, ${dayDate}`,
+                        duration: `${hours}j ${mins}m`,
+                        hasData: true
+                    });
+                } else if (dayData && dayData.in) {
+                    dailyHours.push({
+                        day: `${dayName}, ${dayDate}`,
+                        duration: 'Belum keluar',
+                        hasData: true
+                    });
+                } else {
+                    dailyHours.push({
+                        day: `${dayName}, ${dayDate}`,
+                        duration: '-',
+                        hasData: false
+                    });
                 }
             });
-
-            // Manual Database Sync
-            document.getElementById('syncDatabaseBtn')?.addEventListener('click', async () => {
-                const btn = document.getElementById('syncDatabaseBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '🌐 Sinkronisasi...';
-                btn.disabled = true;
+            
+            // Update weekly summary
+            const totalHours = Math.floor(totalMinutes / 60);
+            const totalMins = totalMinutes % 60;
+            document.getElementById('weeklyHours').textContent = `${totalHours} jam ${totalMins} menit`;
+            document.getElementById('workingDays').textContent = `${workingDays} hari`;
+            
+            // Calculate average
+            if (workingDays > 0) {
+                const avgMinutes = Math.floor(totalMinutes / workingDays);
+                const avgHours = Math.floor(avgMinutes / 60);
+                const avgMins = avgMinutes % 60;
+                document.getElementById('averageHours').textContent = `${avgHours} jam ${avgMins} menit`;
+            } else {
+                document.getElementById('averageHours').textContent = '0 jam 0 menit';
+            }
+            
+            // Update progress bar (target 40 hours = 2400 minutes)
+            const progressPercentage = Math.min((totalMinutes / 2400) * 100, 100);
+            document.getElementById('progressPercentage').textContent = `${Math.round(progressPercentage)}%`;
+            document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+            
+            // Update daily breakdown
+            const dailyBreakdown = document.getElementById('dailyBreakdown');
+            dailyBreakdown.innerHTML = '';
+            
+            dailyHours.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'flex justify-between text-sm';
                 
-                try {
-                    await syncToAllNetworks({ 
-                        users: users, 
-                        timestamp: new Date().toISOString(),
-                        action: 'manual_sync'
-                    }, 'manual_sync');
-                    
-                    alert('✅ Sinkronisasi manual berhasil! Semua data tersimpan ke Google Database.');
-                } catch (error) {
-                    alert('❌ Error saat sinkronisasi: ' + error.message);
-                }
+                const textColor = day.hasData ? 'text-gray-800' : 'text-gray-400';
+                const durationColor = day.duration === 'Belum keluar' ? 'text-orange-600' : 
+                                    day.duration === '-' ? 'text-gray-400' : 'text-green-600';
                 
-                btn.textContent = originalText;
-                btn.disabled = false;
+                dayElement.innerHTML = `
+                    <span class="${textColor}">${day.day}</span>
+                    <span class="font-semibold ${durationColor}">${day.duration}</span>
+                `;
+                
+                dailyBreakdown.appendChild(dayElement);
             });
+        }
 
-            // Delete All Weekly Recaps
-            document.getElementById('deleteAllWeeklyRecapsBtn')?.addEventListener('click', async () => {
-                const confirmMessage = `⚠️ PERINGATAN KERAS! ⚠️
+        // Calculate duration in minutes
+        function calculateDurationInMinutes(inTime, outTime) {
+            if (!outTime) return 0;
+            
+            const inDate = new Date(`2000-01-01 ${inTime}`);
+            const outDate = new Date(`2000-01-01 ${outTime}`);
+            
+            // Handle overnight shifts
+            if (outDate < inDate) {
+                outDate.setDate(outDate.getDate() + 1);
+            }
+            
+            const diff = outDate - inDate;
+            return Math.floor(diff / (1000 * 60)); // Convert to minutes
+        }
 
-Anda akan menghapus SEMUA rekap mingguan dari sistem:
+        // Update today's date
+        function updateTodayDate() {
+            const today = new Date();
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
 
-🗑️ Yang akan dihapus:
-• Semua jam duty mingguan (${users.length - 1} user)
-• Semua log aktivitas mingguan
-• Semua statistik performa mingguan
-• Semua data kehadiran minggu ini
-
-📊 Data yang TIDAK terhapus:
-• Jam duty bulanan tetap aman
-• Jam duty harian tetap aman
-• Akun user tetap ada
-• Data di Google Database tetap tersimpan
-
-⚠️ TINDAKAN INI TIDAK DAPAT DIBATALKAN!
-
-Ketik "HAPUS SEMUA REKAP" untuk konfirmasi:`;
-
-                const confirmation = prompt(confirmMessage);
-                
-                if (confirmation === 'HAPUS SEMUA REKAP') {
-                    const btn = document.getElementById('deleteAllWeeklyRecapsBtn');
-                    const originalText = btn.textContent;
-                    btn.textContent = '🗑️ Menghapus...';
-                    btn.disabled = true;
-                    
-                    try {
-                        // Save deletion action to database first
-                        await saveToDatabase({
-                            action: 'delete_all_weekly_recaps',
-                            timestamp: new Date().toISOString(),
-                            deletedBy: 'admin',
-                            affectedUsers: users.length - 1,
-                            deletedData: {
-                                weeklyHours: users.map(u => ({ username: u.username, weeklyHours: u.dutyHours.week })),
-                                activityLogCount: activityLog.length
-                            }
-                        }, 'admin_delete_weekly');
-                        
-                        // Reset all weekly hours
-                        users.forEach(user => {
-                            user.dutyHours.week = 0;
-                        });
-                        
-                        // Clear all weekly activity logs
-                        activityLog = [];
-                        
-                        // Update all displays
-                        updateDutyHours();
-                        updateAdminUserList();
-                        updateWeeklyStats();
-                        updateWeeklyUserPerformance();
-                        updateActivityLog();
-                        
-                        // Sync deletion to all networks
-                        await syncToAllNetworks({
-                            action: 'weekly_recaps_deleted',
-                            timestamp: new Date().toISOString(),
-                            deletedBy: 'admin'
-                        }, 'admin_delete_weekly');
-                        
-                        alert(`✅ SEMUA REKAP MINGGUAN BERHASIL DIHAPUS!
-
-🗑️ Yang telah dihapus:
-• ${users.length - 1} user - jam duty mingguan direset
-• Semua log aktivitas mingguan
-• Semua statistik performa mingguan
-
-🌐 Status Database:
-✅ Aksi penghapusan tersimpan di Google Database
-✅ Tersinkronisasi ke semua server
-✅ Backup otomatis dibuat
-
-📊 Sistem siap untuk data mingguan baru!`);
-                        
-                    } catch (error) {
-                        alert('❌ Error saat menghapus rekap mingguan: ' + error.message);
+        // Update admin stats
+        function updateAdminStats() {
+            const today = new Date().toISOString().split('T')[0];
+            let presentToday = 0;
+            let lateToday = 0;
+            
+            Object.keys(employees).forEach(id => {
+                if (attendanceData[id] && attendanceData[id][today] && attendanceData[id][today].in) {
+                    presentToday++;
+                    const inTime = attendanceData[id][today].in;
+                    if (inTime > '09:00:00') {
+                        lateToday++;
                     }
-                    
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                } else if (confirmation !== null) {
-                    alert('❌ Konfirmasi salah! Penghapusan dibatalkan untuk keamanan data.');
                 }
             });
+            
+            document.getElementById('totalEmployees').textContent = Object.keys(employees).length;
+            document.getElementById('presentToday').textContent = presentToday;
+            document.getElementById('notPresent').textContent = Object.keys(employees).length - presentToday;
+            document.getElementById('lateToday').textContent = lateToday;
+        }
 
-            // Auto Delete Inactive Users
-            document.getElementById('autoDeleteInactiveUsersBtn')?.addEventListener('click', async () => {
-                const inactiveThreshold = 30; // days
-                const currentDate = new Date();
-                const thresholdDate = new Date();
-                thresholdDate.setDate(currentDate.getDate() - inactiveThreshold);
-                
-                // Find inactive users (users with 0 hours in the last 30 days)
-                const inactiveUsers = users.filter(user => {
-                    if (user.username === 'guest') return false; // Never delete guest
+        // Load attendance table
+        function loadAttendanceTable() {
+            const tbody = document.getElementById('attendanceTable');
+            tbody.innerHTML = '';
+            
+            const weekDates = getWeekDates();
+            
+            Object.keys(employees).forEach(id => {
+                weekDates.forEach(date => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dayData = attendanceData[id] && attendanceData[id][dateStr];
                     
-                    // Check if user has any activity in the last 30 days
-                    const hasRecentActivity = user.dutyHours.month > 0 || user.dutyHours.week > 0 || user.dutyHours.today > 0;
-                    return !hasRecentActivity;
+                    if (dayData && dayData.in) {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b hover:bg-gray-50';
+                        
+                        const duration = calculateDuration(dayData.in, dayData.out);
+                        const status = getStatus(dayData.in, dayData.out);
+                        
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-800">${id}</td>
+                            <td class="px-4 py-3 text-sm text-gray-800">${employees[id].name}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${date.toLocaleDateString('id-ID')}</td>
+                            <td class="px-4 py-3 text-sm text-purple-600">Shift ${dayData.shift || '-'}</td>
+                            <td class="px-4 py-3 text-sm text-green-600">${dayData.in}</td>
+                            <td class="px-4 py-3 text-sm text-red-600">${dayData.out || '-'}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded-full ${status.class}">${status.text}</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${duration}</td>
+                        `;
+                        
+                        tbody.appendChild(row);
+                    }
                 });
-                
-                if (inactiveUsers.length === 0) {
-                    alert('✅ Tidak ada user tidak aktif yang perlu dihapus!\n\nSemua user masih aktif dalam 30 hari terakhir.');
-                    return;
-                }
-                
-                const confirmMessage = `🤖 AUTO DELETE USER TIDAK AKTIF
-
-📊 Ditemukan ${inactiveUsers.length} user tidak aktif:
-
-${inactiveUsers.map(user => `• ${user.fullName} (${user.username}) - ${user.department}`).join('\n')}
-
-⚠️ KRITERIA PENGHAPUSAN:
-• Tidak ada jam duty dalam 30 hari terakhir
-• Tidak ada aktivitas check in/out
-• Akun dianggap tidak terpakai
-
-🗑️ Yang akan dihapus:
-• Akun user dan semua data terkait
-• Riwayat jam duty (hari/minggu/bulan)
-• Log aktivitas user tersebut
-
-⚠️ TINDAKAN INI TIDAK DAPAT DIBATALKAN!
-
-Ketik "AUTO DELETE" untuk konfirmasi:`;
-
-                const confirmation = prompt(confirmMessage);
-                
-                if (confirmation === 'AUTO DELETE') {
-                    const btn = document.getElementById('autoDeleteInactiveUsersBtn');
-                    const originalText = btn.textContent;
-                    btn.textContent = '🤖 Menghapus...';
-                    btn.disabled = true;
-                    
-                    try {
-                        // Save deletion action to database
-                        await saveToDatabase({
-                            action: 'auto_delete_inactive_users',
-                            timestamp: new Date().toISOString(),
-                            deletedBy: 'admin_auto_system',
-                            inactiveThreshold: inactiveThreshold,
-                            deletedUsers: inactiveUsers.map(u => ({
-                                id: u.id,
-                                username: u.username,
-                                fullName: u.fullName,
-                                email: u.email,
-                                department: u.department,
-                                lastActivity: 'No activity in 30 days'
-                            }))
-                        }, 'auto_delete_users');
-                        
-                        // Remove inactive users from system
-                        const deletedUsernames = inactiveUsers.map(u => u.username);
-                        users = users.filter(user => !deletedUsernames.includes(user.username));
-                        
-                        // Clean up activity log from deleted users
-                        activityLog = activityLog.filter(log => !deletedUsernames.includes(log.username));
-                        
-                        // Update all displays
-                        updateUserSelect();
-                        updateAdminUserList();
-                        updateWeeklyStats();
-                        updateWeeklyUserPerformance();
-                        updateActivityLog();
-                        
-                        // Sync deletion to all networks
-                        await syncToAllNetworks({
-                            action: 'inactive_users_auto_deleted',
-                            timestamp: new Date().toISOString(),
-                            deletedCount: inactiveUsers.length,
-                            deletedUsers: deletedUsernames
-                        }, 'auto_delete_users');
-                        
-                        alert(`🤖 AUTO DELETE SELESAI!
-
-✅ Berhasil menghapus ${inactiveUsers.length} user tidak aktif:
-${inactiveUsers.map(u => `• ${u.fullName} (${u.username})`).join('\n')}
-
-🌐 Status Database:
-✅ Penghapusan tersimpan di Google Database
-✅ Tersinkronisasi ke semua server
-✅ Sistem dibersihkan dari akun tidak aktif
-
-📊 Sistem sekarang lebih optimal dengan ${users.length - 1} user aktif!`);
-                        
-                    } catch (error) {
-                        alert('❌ Error saat auto delete: ' + error.message);
-                    }
-                    
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                } else if (confirmation !== null) {
-                    alert('❌ Konfirmasi salah! Auto delete dibatalkan untuk keamanan data.');
-                }
             });
+        }
+
+        // Get week dates
+        function getWeekDates() {
+            const today = new Date();
+            const currentDay = today.getDay();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - currentDay + 1);
+            
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(monday);
+                date.setDate(monday.getDate() + i);
+                dates.push(date);
+            }
+            return dates;
+        }
+
+        // Calculate duration
+        function calculateDuration(inTime, outTime) {
+            if (!outTime) return '-';
+            
+            const inDate = new Date(`2000-01-01 ${inTime}`);
+            const outDate = new Date(`2000-01-01 ${outTime}`);
+            const diff = outDate - inDate;
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return `${hours}j ${minutes}m`;
+        }
+
+        // Get status
+        function getStatus(inTime, outTime) {
+            if (!outTime) {
+                return { text: 'Belum Keluar', class: 'bg-yellow-100 text-yellow-800' };
+            }
+            
+            if (inTime > '09:00:00') {
+                return { text: 'Terlambat', class: 'bg-red-100 text-red-800' };
+            }
+            
+            return { text: 'Hadir', class: 'bg-green-100 text-green-800' };
+        }
+
+        // Google Apps Script URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbySqNuX3TyOARTTNRbvlez0VpxIBkopS9McXDfnD9Uitldlux2AgEPkm3Zx8st2Xp6BGQ/exec';
+
+        // Send to Spreadsheet
+        document.getElementById('sendToSpreadsheetBtn').addEventListener('click', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayData = attendanceData[currentUser.id] && attendanceData[currentUser.id][today];
+            
+            if (!todayData || !todayData.in) {
+                alert('Belum ada data absensi untuk dikirim!');
+                return;
+            }
+            
+            // Prepare data for Google Sheets
+            const timeData = `${todayData.in}${todayData.out ? ' - ' + todayData.out : ''}`;
+            const postData = {
+                action: 'sendAttendance',
+                name: currentUser.name,
+                shift: todayData.shift,
+                timeData: timeData,
+                date: today,
+                employeeId: currentUser.id
+            };
+            
+            // Show loading
+            document.getElementById('sendStatus').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin mr-1"></i>Mengirim data ke Google Sheets...</span>';
+            
+            // Send to Google Sheets
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain',
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(response => response.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        document.getElementById('sendStatus').innerHTML = '<span class="text-green-600"><i class="fas fa-check mr-1"></i>Data berhasil dikirim ke Google Sheets!</span>';
+                        
+                        // Update local spreadsheet data for backup
+                        if (!spreadsheetData[currentUser.name]) {
+                            spreadsheetData[currentUser.name] = { shift1: '', shift2: '', shift3: '', shift4: '' };
+                        }
+                        const shiftKey = `shift${todayData.shift}`;
+                        spreadsheetData[currentUser.name][shiftKey] = timeData;
+                        localStorage.setItem('spreadsheetData', JSON.stringify(spreadsheetData));
+                        
+                    } else {
+                        document.getElementById('sendStatus').innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Gagal mengirim: ' + (data.message || 'Unknown error') + '</span>';
+                    }
+                } catch (e) {
+                    console.error('Parse error:', e, 'Response:', text);
+                    document.getElementById('sendStatus').innerHTML = '<span class="text-orange-600"><i class="fas fa-exclamation-triangle mr-1"></i>Data terkirim tapi ada masalah parsing response</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+                document.getElementById('sendStatus').innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Terjadi kesalahan jaringan. Coba lagi nanti.</span>';
+            });
+            
+            // Clear status after 5 seconds
+            setTimeout(() => {
+                document.getElementById('sendStatus').innerHTML = '';
+            }, 5000);
         });
 
-        // Generate full CSV data for export
-        function generateFullCSVData() {
-            const headers = [
-                'ID', 'Username', 'Nama Lengkap', 'Email', 'Departemen', 'Posisi',
-                'Jam Hari Ini', 'Jam Minggu Ini', 'Jam Bulan Ini', 'Status Sync',
-                'Tanggal Export', 'IP Terakhir'
-            ];
+        // Generate spreadsheet view
+        function generateSpreadsheetView() {
+            let spreadsheetView = 'NAMA\tSHIFT 1\tSHIFT 2\tSHIFT 3\tSHIFT 4\n';
             
-            const rows = users.filter(u => u.username !== 'guest').map(user => [
-                user.id,
-                user.username,
-                user.fullName,
-                user.email,
-                user.department,
-                user.position,
-                formatMinutesToHours(user.dutyHours.today),
-                formatMinutesToHours(user.dutyHours.week),
-                formatMinutesToHours(user.dutyHours.month),
-                user.syncStatus,
-                new Date().toLocaleDateString('id-ID'),
-                document.getElementById('userIP').textContent
-            ]);
+            // Add all employees to spreadsheet view
+            Object.keys(employees).forEach(id => {
+                const name = employees[id].name;
+                const data = spreadsheetData[name] || { shift1: '', shift2: '', shift3: '', shift4: '' };
+                
+                spreadsheetView += `${name}\t${data.shift1}\t${data.shift2}\t${data.shift3}\t${data.shift4}\n`;
+            });
             
-            return [headers, ...rows].map(row => row.join(',')).join('\n');
+            return spreadsheetView;
+        }
+
+        // Export data
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const csvData = generateCSV();
+            downloadCSV(csvData, 'data_absensi.csv');
+        });
+
+        // Generate CSV
+        function generateCSV() {
+            let csv = 'ID,Nama,Tanggal,Shift,Masuk,Keluar,Status,Durasi\n';
+            
+            const weekDates = getWeekDates();
+            
+            Object.keys(employees).forEach(id => {
+                weekDates.forEach(date => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const dayData = attendanceData[id] && attendanceData[id][dateStr];
+                    
+                    if (dayData && dayData.in) {
+                        const duration = calculateDuration(dayData.in, dayData.out);
+                        const status = getStatus(dayData.in, dayData.out);
+                        
+                        csv += `${id},"${employees[id].name}","${date.toLocaleDateString('id-ID')}","Shift ${dayData.shift || '-'}","${dayData.in}","${dayData.out || '-'}","${status.text}","${duration}"\n`;
+                    }
+                });
+            });
+            
+            return csv;
+        }
+
+        // Download CSV
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Logout functions
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            currentUser = null;
+            document.getElementById('userDashboard').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        });
+
+        document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        });
+
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            updateAdminStats();
+            loadAttendanceTable();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f0914760ffce06',t:'MTc1NTE3NTcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekapan Absensi Duty - Minggu Ini</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .status-hadir { background: linear-gradient(135deg, #10b981, #059669); }
+        .status-partial { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .status-absent { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .shift-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
+        .table-row:hover { background-color: #f8fafc; transform: translateY(-1px); transition: all 0.2s ease; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">Rekapan Absensi Duty</h1>
+                        <p class="text-gray-600">Data real-time dari Google Spreadsheet</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Terakhir Update:</p>
+                        <p class="font-semibold text-gray-800" id="lastUpdate">-</p>
+                    </div>
+                    <button id="refreshBtn" class="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Spreadsheet URL Configuration -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-link mr-2 text-blue-600"></i>Konfigurasi Sumber Data
+            </h3>
+            <div class="flex space-x-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">URL CSV Google Spreadsheet:</label>
+                    <input type="url" id="spreadsheetUrl" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           placeholder="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0">
+                </div>
+                <div class="flex items-end">
+                    <button id="saveUrlBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
+                        <i class="fas fa-save mr-2"></i>Simpan URL
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3 text-sm text-gray-600">
+                <p><strong>Cara mendapatkan URL CSV:</strong></p>
+                <ol class="list-decimal list-inside mt-2 space-y-1">
+                    <li>Buka Google Spreadsheet Anda</li>
+                    <li>Klik File → Share → Publish to web</li>
+                    <li>Pilih sheet yang ingin dipublikasi</li>
+                    <li>Pilih format "Comma-separated values (.csv)"</li>
+                    <li>Klik "Publish" dan copy URL yang diberikan</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden bg-white rounded-2xl shadow-xl p-8 text-center mb-6">
+            <div class="loading-spinner w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-600">Mengambil data dari spreadsheet...</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid md:grid-cols-4 gap-6 mb-6" id="statsCards">
+            <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Karyawan</p>
+                        <p class="text-2xl font-bold text-gray-800" id="totalEmployees">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-users text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Hadir Penuh</p>
+                        <p class="text-2xl font-bold text-green-600" id="fullAttendance">0</p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Hadir Sebagian</p>
+                        <p class="text-2xl font-bold text-yellow-600" id="partialAttendance">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fas fa-exclamation-circle text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Tidak Hadir</p>
+                        <p class="text-2xl font-bold text-red-600" id="absentCount">0</p>
+                    </div>
+                    <div class="bg-red-100 p-3 rounded-full">
+                        <i class="fas fa-times-circle text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Summary Chart -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-bar mr-2 text-purple-600"></i>Ringkasan Kehadiran per Shift
+            </h3>
+            <div class="grid md:grid-cols-4 gap-4" id="shiftSummary">
+                <!-- Shift summaries will be populated here -->
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-64">
+                    <input type="text" id="searchInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           placeholder="Cari nama karyawan...">
+                </div>
+                <div>
+                    <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Status</option>
+                        <option value="full">Hadir Penuh</option>
+                        <option value="partial">Hadir Sebagian</option>
+                        <option value="absent">Tidak Hadir</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="shiftFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Shift</option>
+                        <option value="1">Shift 1</option>
+                        <option value="2">Shift 2</option>
+                        <option value="3">Shift 3</option>
+                        <option value="4">Shift 4</option>
+                    </select>
+                </div>
+                <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                    <i class="fas fa-download mr-2"></i>Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden fade-in">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-table mr-2 text-indigo-600"></i>Rekapan Absensi Duty Minggu Ini
+                    </h3>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
+                            Hadir Penuh
+                        </span>
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
+                            Sebagian
+                        </span>
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
+                            Tidak Hadir
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">No</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-600">Nama Karyawan</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Shift 1</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Shift 2</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Shift 3</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Shift 4</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Total Shift</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-600">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- No Data Message -->
+        <div id="noDataMessage" class="hidden bg-white rounded-2xl shadow-xl p-12 text-center">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-inbox text-6xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Belum Ada Data</h3>
+            <p class="text-gray-500 mb-4">Silakan masukkan URL CSV Google Spreadsheet dan klik refresh untuk memuat data.</p>
+            <button onclick="document.getElementById('spreadsheetUrl').focus()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition duration-300">
+                <i class="fas fa-plus mr-2"></i>Tambah URL Spreadsheet
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let attendanceData = [];
+        let filteredData = [];
+        
+        // Load saved URL on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set your spreadsheet URL
+            const yourSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUot1r4atwWX8cpIyqApKiqP80ETUiwoG76KdIuhFfohryVSDZ2z4TLzETtRARNfjcQ3TfkA6UcLOa/pub?output=csv';
+            
+            const savedUrl = localStorage.getItem('spreadsheetUrl') || yourSpreadsheetUrl;
+            document.getElementById('spreadsheetUrl').value = savedUrl;
+            localStorage.setItem('spreadsheetUrl', savedUrl);
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Load data immediately
+            loadAttendanceData();
+            
+            // Auto refresh every 5 minutes
+            setInterval(loadAttendanceData, 5 * 60 * 1000);
+        });
+
+        function setupEventListeners() {
+            // Save URL button
+            document.getElementById('saveUrlBtn').addEventListener('click', function() {
+                const url = document.getElementById('spreadsheetUrl').value.trim();
+                if (url) {
+                    localStorage.setItem('spreadsheetUrl', url);
+                    loadAttendanceData();
+                    showNotification('URL berhasil disimpan!', 'success');
+                } else {
+                    showNotification('Silakan masukkan URL yang valid!', 'error');
+                }
+            });
+
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', loadAttendanceData);
+
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', filterData);
+
+            // Filter selects
+            document.getElementById('statusFilter').addEventListener('change', filterData);
+            document.getElementById('shiftFilter').addEventListener('change', filterData);
+
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+        }
+
+        async function loadAttendanceData() {
+            const url = document.getElementById('spreadsheetUrl').value.trim();
+            if (!url) {
+                document.getElementById('noDataMessage').classList.remove('hidden');
+                document.getElementById('statsCards').style.display = 'none';
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('noDataMessage').classList.add('hidden');
+
+            try {
+                // Add timestamp to prevent caching
+                const csvUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                attendanceData = parseCSV(csvText);
+                filteredData = [...attendanceData];
+                
+                updateStatistics();
+                updateShiftSummary();
+                renderTable();
+                updateLastUpdateTime();
+                
+                document.getElementById('statsCards').style.display = 'grid';
+                showNotification('Data berhasil dimuat dari spreadsheet!', 'success');
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showNotification('Gagal memuat data: ' + error.message, 'error');
+                document.getElementById('noDataMessage').classList.remove('hidden');
+                document.getElementById('statsCards').style.display = 'none';
+            } finally {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length < 2) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length >= 2 && values[0].trim()) { // At least name should exist
+                    const row = {
+                        nama: values[0] || '',
+                        shift1: values[1] || '',
+                        shift2: values[2] || '',
+                        shift3: values[3] || '',
+                        shift4: values[4] || ''
+                    };
+                    data.push(row);
+                }
+            }
+
+            return data;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim().replace(/"/g, ''));
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim().replace(/"/g, ''));
+            return result;
+        }
+
+        function updateStatistics() {
+            let fullAttendance = 0;
+            let partialAttendance = 0;
+            let absentCount = 0;
+
+            attendanceData.forEach(row => {
+                const shifts = [row.shift1, row.shift2, row.shift3, row.shift4];
+                const attendedShifts = shifts.filter(shift => shift && shift.trim() !== '').length;
+                
+                if (attendedShifts === 4) {
+                    fullAttendance++;
+                } else if (attendedShifts > 0) {
+                    partialAttendance++;
+                } else {
+                    absentCount++;
+                }
+            });
+
+            document.getElementById('totalEmployees').textContent = attendanceData.length;
+            document.getElementById('fullAttendance').textContent = fullAttendance;
+            document.getElementById('partialAttendance').textContent = partialAttendance;
+            document.getElementById('absentCount').textContent = absentCount;
+        }
+
+        function updateShiftSummary() {
+            const shiftCounts = { shift1: 0, shift2: 0, shift3: 0, shift4: 0 };
+            
+            attendanceData.forEach(row => {
+                if (row.shift1 && row.shift1.trim()) shiftCounts.shift1++;
+                if (row.shift2 && row.shift2.trim()) shiftCounts.shift2++;
+                if (row.shift3 && row.shift3.trim()) shiftCounts.shift3++;
+                if (row.shift4 && row.shift4.trim()) shiftCounts.shift4++;
+            });
+
+            const shiftSummaryHtml = `
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-blue-600">${shiftCounts.shift1}</div>
+                    <div class="text-sm text-gray-600">Shift 1 (07:00-15:00)</div>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-orange-600">${shiftCounts.shift2}</div>
+                    <div class="text-sm text-gray-600">Shift 2 (15:00-23:00)</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-purple-600">${shiftCounts.shift3}</div>
+                    <div class="text-sm text-gray-600">Shift 3 (23:00-07:00)</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-green-600">${shiftCounts.shift4}</div>
+                    <div class="text-sm text-gray-600">Shift 4 (Fleksibel)</div>
+                </div>
+            `;
+            
+            document.getElementById('shiftSummary').innerHTML = shiftSummaryHtml;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '';
+
+            filteredData.forEach((row, index) => {
+                const shifts = [row.shift1, row.shift2, row.shift3, row.shift4];
+                const attendedShifts = shifts.filter(shift => shift && shift.trim() !== '').length;
+                
+                let status, statusClass;
+                if (attendedShifts === 4) {
+                    status = 'Hadir Penuh';
+                    statusClass = 'status-hadir';
+                } else if (attendedShifts > 0) {
+                    status = 'Hadir Sebagian';
+                    statusClass = 'status-partial';
+                } else {
+                    status = 'Tidak Hadir';
+                    statusClass = 'status-absent';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'table-row border-b border-gray-100';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-gray-600">${index + 1}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-gray-800">${row.nama}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${formatShiftData(row.shift1)}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${formatShiftData(row.shift2)}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${formatShiftData(row.shift3)}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${formatShiftData(row.shift4)}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="font-bold text-lg text-gray-800">${attendedShifts}</span>
+                        <span class="text-sm text-gray-500">/4</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-white text-sm font-semibold ${statusClass}">
+                            ${status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function formatShiftData(shiftData) {
+            if (!shiftData || shiftData.trim() === '') {
+                return '<span class="text-gray-400 text-sm">-</span>';
+            }
+            
+            return `<div class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">${shiftData}</div>`;
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const shiftFilter = document.getElementById('shiftFilter').value;
+
+            filteredData = attendanceData.filter(row => {
+                // Search filter
+                const matchesSearch = row.nama.toLowerCase().includes(searchTerm);
+                
+                // Status filter
+                const shifts = [row.shift1, row.shift2, row.shift3, row.shift4];
+                const attendedShifts = shifts.filter(shift => shift && shift.trim() !== '').length;
+                
+                let matchesStatus = true;
+                if (statusFilter === 'full') {
+                    matchesStatus = attendedShifts === 4;
+                } else if (statusFilter === 'partial') {
+                    matchesStatus = attendedShifts > 0 && attendedShifts < 4;
+                } else if (statusFilter === 'absent') {
+                    matchesStatus = attendedShifts === 0;
+                }
+                
+                // Shift filter
+                let matchesShift = true;
+                if (shiftFilter) {
+                    const shiftKey = `shift${shiftFilter}`;
+                    matchesShift = row[shiftKey] && row[shiftKey].trim() !== '';
+                }
+                
+                return matchesSearch && matchesStatus && matchesShift;
+            });
+
+            renderTable();
+        }
+
+        function exportToCSV() {
+            if (filteredData.length === 0) {
+                showNotification('Tidak ada data untuk diekspor!', 'error');
+                return;
+            }
+
+            let csv = 'No,Nama,Shift 1,Shift 2,Shift 3,Shift 4,Total Shift,Status\n';
+            
+            filteredData.forEach((row, index) => {
+                const shifts = [row.shift1, row.shift2, row.shift3, row.shift4];
+                const attendedShifts = shifts.filter(shift => shift && shift.trim() !== '').length;
+                
+                let status;
+                if (attendedShifts === 4) {
+                    status = 'Hadir Penuh';
+                } else if (attendedShifts > 0) {
+                    status = 'Hadir Sebagian';
+                } else {
+                    status = 'Tidak Hadir';
+                }
+
+                csv += `${index + 1},"${row.nama}","${row.shift1}","${row.shift2}","${row.shift3}","${row.shift4}",${attendedShifts},"${status}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `rekapan_absensi_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showNotification('Data berhasil diekspor!', 'success');
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleString('id-ID');
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold transform transition-all duration-300 translate-x-full`;
+            
+            if (type === 'success') {
+                notification.classList.add('bg-green-500');
+                notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
+            } else {
+                notification.classList.add('bg-red-500');
+                notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f03c66935ff918',t:'MTc1NTE3MjI0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f098c535cbce06',t:'MTc1NTE3NjAyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
