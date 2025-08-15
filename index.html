@@ -430,3 +430,102 @@ if("serviceWorker" in navigator){
 </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Absensi Minimal — Offline + Auto Sync + Rekap Mingguan</title>
+<style>
+:root{--bg:#0b1020;--card:#12172a;--muted:#9aa0b4;--accent:#2563eb;--ok:#16a34a;--bad:#ef4444;--ring:#60a5fa;}
+body{background:var(--bg);color:#e5e7eb;font-family:Arial, sans-serif;margin:0;padding:0}
+.card{background:var(--card);border-radius:10px;padding:14px;margin-bottom:12px}
+.muted{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- View User -->
+<section id="viewUser" class="card">
+  <h2 id="userName">Nama User</h2>
+  <div class="muted">ID: <span id="userId">—</span> · Role: <span id="userRole">—</span></div>
+
+  <div class="card">
+    <div class="muted">Tanggal</div>
+    <div id="todayDate"></div>
+  </div>
+  <div class="card">
+    <div class="muted">Status Hari Ini</div>
+    <div id="statusIn">Masuk: -</div>
+    <div id="statusOut">Keluar: -</div>
+  </div>
+
+  <!-- Rekap Mingguan -->
+  <div class="card" style="margin-top:12px">
+    <div class="muted">Total Jam Mingguan</div>
+    <div id="weeklyHours">0 jam</div>
+    <div id="weeklyList" class="muted" style="margin-top:4px"></div>
+  </div>
+</section>
+
+<script>
+let attendance = {}; // contoh: {userId: { '2025-08-10': {in:'07:00', out:'15:00', shift:'1'} }}
+let currentUser = {id:'0003', name:'Demo User', role:'user'};
+
+function todayKey(d=new Date()){
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split("T")[0];
+}
+
+function calculateWeeklyHours(userId) {
+  const now = new Date();
+  let totalHours = 0;
+  let dailyList = [];
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i);
+    const key = todayKey(date);
+    const record = (attendance[userId] || {})[key];
+
+    if (record && record.in && record.out) {
+      const [inH, inM] = record.in.split(":").map(Number);
+      const [outH, outM] = record.out.split(":").map(Number);
+
+      let diff = (outH * 60 + outM) - (inH * 60 + inM);
+      if (diff < 0) diff += 24 * 60; // shift malam
+
+      const hours = diff / 60;
+      totalHours += hours;
+      dailyList.push({ date: key, hours: hours.toFixed(2) });
+    }
+  }
+
+  return { totalHours: totalHours.toFixed(2), dailyList };
+}
+
+function updateWeeklyHoursUI() {
+  const result = calculateWeeklyHours(currentUser.id);
+  document.getElementById("weeklyHours").textContent = `${result.totalHours} jam`;
+  document.getElementById("weeklyList").innerHTML = result.dailyList.map(d => `${d.date}: ${d.hours} jam`).join("<br>");
+}
+
+// Simulasi data
+attendance['0003'] = {
+  '2025-08-09': {in:'07:00', out:'15:00', shift:'1'},
+  '2025-08-10': {in:'07:15', out:'15:30', shift:'1'},
+  '2025-08-11': {in:'07:00', out:'14:50', shift:'1'},
+  '2025-08-12': {in:'07:10', out:'15:05', shift:'1'},
+  '2025-08-13': {in:'07:05', out:'15:20', shift:'1'},
+  '2025-08-14': {in:'07:00', out:'15:00', shift:'1'},
+  '2025-08-15': {in:'07:30', out:'15:10', shift:'1'}
+};
+
+// Jalankan
+document.getElementById("todayDate").textContent = new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+updateWeeklyHoursUI();
+</script>
+
+</body>
+</html>
+
