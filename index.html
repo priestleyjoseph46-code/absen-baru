@@ -298,7 +298,7 @@ async function changePassword(targetId, newPass){
   saveEmployees(); renderEmpTable();
   // Try server update (requires Apps Script to support this action)
   try{
-    const r = await fetch(ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"updatePassword", id: targetId, password: u.password})});
+    const r = await fetch(ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"updatePassword", id: targetId, password: u.password, changedBy: currentUser ? currentUser.name : "unknown"})});
     if(!r.ok){ throw new Error("HTTP "+r.status) }
     toast("Password diperbarui");
   }catch(e){
