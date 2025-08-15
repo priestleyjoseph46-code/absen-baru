@@ -1,941 +1,432 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#4F46E5" />
-  <title>Sistem Absensi Online — Sinkron Antar Perangkat</title>
-
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome CDN -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Absensi Minimal — Offline + Auto Sync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    .fade-in { animation: fadeIn .5s ease-in forwards; opacity: 0; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .badge { font-size: 12px; padding: 2px 8px; border-radius: 9999px; }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace; background:#f3f4f6; border:1px solid #e5e7eb; border-bottom-width:3px; padding:.15rem .4rem; border-radius:.375rem; }
+    :root{--bg:#0b1020;--card:#12172a;--muted:#9aa0b4;--accent:#2563eb;--ok:#16a34a;--bad:#ef4444;--ring:#60a5fa;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#e5e7eb;}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:920px;margin:0 auto;padding:20px}
+    .card{background:var(--card);border:1px solid #1f2540;border-radius:14px;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 280px}
+    .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:#1b2342;color:#fff;cursor:pointer;font-weight:600}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.ok{background:var(--ok)}
+    .btn.bad{background:var(--bad)}
+    .btn.accent{background:var(--accent)}
+    input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #273055;background:#0f1430;color:#fff;outline:none}
+    input:focus,select:focus{border-color:var(--ring);box-shadow:0 0 0 3px rgba(96,165,250,.25)}
+    .muted{color:var(--muted);font-size:13px}
+    .title{font-weight:700;font-size:20px;margin:0 0 10px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#263057;color:#cbd5e1;font-size:12px}
+    .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0b1020,rgba(11,16,32,.8));backdrop-filter:blur(8px);border-bottom:1px solid #1f2540}
+    .topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid #273055;background:#0f1430;font-size:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px 10px;border-bottom:1px solid #202646;text-align:left;font-size:14px}
+    th{color:#cbd5e1;font-weight:600}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0f1430;border:1px solid #263057;border-radius:12px;padding:10px 14px;font-size:14px;z-index:1000}
+    .hidden{display:none !important}
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen">
-
-  <!-- Net + Sync badge -->
-  <div class="fixed top-3 left-1/2 -translate-x-1/2 z-50">
-    <div id="netBadge" class="px-3 py-1 rounded-full text-sm font-medium shadow-lg bg-gray-800 text-white hidden"></div>
-  </div>
-
-  <!-- Login -->
-  <div id="loginScreen" class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in" style="opacity:1;">
-      <div class="text-center mb-8">
-        <div class="bg-gradient-to-r from-blue-600 to-purple-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
-          <i class="fas fa-fingerprint text-white text-3xl"></i>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Sistem Absensi</h1>
-        <p class="text-gray-600">Masuk sebagai karyawan / admin</p>
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <div style="display:flex;align-items:center;gap:10px">
+        <strong>Absensi</strong>
+        <span id="badgeOnline" class="pill">Offline</span>
+        <span id="syncState" class="pill">Idle</span>
       </div>
-
-      <form id="loginForm" class="space-y-6">
-        <div>
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-          <input type="text" id="username" autocomplete="username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Contoh: 0001" />
-        </div>
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password / PIN</label>
-          <input type="password" id="password" autocomplete="current-password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Masukkan password" />
-        </div>
-        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-          <i class="fas fa-sign-in-alt mr-2"></i>Masuk
-        </button>
-      </form>
-
-      <div class="mt-6 text-center text-xs text-gray-500">
-        Tekan <span class="kbd">Ctrl</span> + <span class="kbd">K</span> di dashboard untuk pencarian cepat.
-      </div>
-
-      <div id="loginError" role="alert" class="text-red-600 mt-4 text-center text-sm hidden"></div>
-
-      <div class="mt-6 p-3 rounded bg-indigo-50 text-xs text-indigo-900">
-        <div class="font-semibold mb-1">Catatan:</div>
-        - Data karyawan bisa diambil dari Google Sheet (GET) atau impor CSV.<br/>
-        - Role admin akan melihat menu manajemen data.
+      <div>
+        <button id="btnToAdmin" class="btn">Admin</button>
+        <button id="btnLogout" class="btn bad hidden">Keluar</button>
       </div>
     </div>
   </div>
 
-  <!-- User/Admin Header -->
-  <template id="appHeaderTpl">
-    <header class="bg-white rounded-2xl shadow-xl p-6 mb-6 flex justify-between items-center">
-      <div class="flex items-center gap-4">
-        <div class="bg-gradient-to-r from-green-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center" aria-hidden="true">
-          <i class="fas fa-user text-white text-2xl"></i>
+  <div class="wrap">
+
+    <!-- LOGIN -->
+    <section id="viewLogin" class="card">
+      <h2 class="title">Masuk</h2>
+      <div class="row">
+        <div class="col">
+          <label class="muted">User ID</label>
+          <input id="loginId" placeholder="mis. 0001" autocomplete="username">
         </div>
-        <div>
-          <h2 id="userName" class="text-2xl font-bold text-gray-800"></h2>
-          <p id="userID" class="text-gray-600"></p>
-          <span id="userRole" class="badge bg-gray-100 text-gray-800"></span>
+        <div class="col">
+          <label class="muted">Password</label>
+          <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password">
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="syncState" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hidden">Sync idle</span>
-        <span id="onlineBadge" class="badge bg-gray-200 text-gray-700">Offline</span>
-        <button id="openCmdK" title="Pencarian cepat (Ctrl+K)" class="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">
-          <i class="fas fa-magnifying-glass"></i>
-        </button>
-        <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-          <i class="fas fa-sign-out-alt mr-2"></i>Keluar
-        </button>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button id="btnLogin" class="btn accent">Masuk</button>
+        <button id="btnRefreshEmployees" class="btn">Refresh Karyawan</button>
       </div>
-    </header>
-  </template>
+      <div id="loginMsg" class="muted" style="margin-top:8px"></div>
+    </section>
 
-  <!-- Dashboard User -->
-  <div id="userDashboard" class="hidden min-h-screen p-4">
-    <div class="max-w-5xl mx-auto">
-      <div id="userHeader"></div>
+    <!-- USER -->
+    <section id="viewUser" class="card hidden">
+      <div class="row">
+        <div class="col">
+          <h2 class="title" id="userName">—</h2>
+          <div class="muted">ID: <span id="userId">—</span> · Role: <span id="userRole">—</span></div>
+        </div>
+        <div class="col" style="text-align:right">
+          <button id="btnChangePassSelf" class="btn">Ganti Password</button>
+        </div>
+      </div>
 
-      <!-- Shift -->
-      <section class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in" aria-label="Pilih Shift">
-        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-clock mr-2 text-blue-600"></i>Pilih Shift Kerja</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" role="radiogroup">
-          <button type="button" class="shift-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-3 px-4 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-shift="1" role="radio" aria-checked="false" tabindex="0">
-            <i class="fas fa-sun mr-2"></i>Shift 1<br /><small>07:00-15:00</small>
-          </button>
-          <button type="button" class="shift-btn bg-orange-100 hover:bg-orange-200 text-orange-800 py-3 px-4 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-orange-500" data-shift="2" role="radio" aria-checked="false" tabindex="-1">
-            <i class="fas fa-sun mr-2"></i>Shift 2<br /><small>15:00-23:00</small>
-          </button>
-          <button type="button" class="shift-btn bg-purple-100 hover:bg-purple-200 text-purple-800 py-3 px-4 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-purple-500" data-shift="3" role="radio" aria-checked="false" tabindex="-1">
-            <i class="fas fa-moon mr-2"></i>Shift 3<br /><small>23:00-07:00</small>
-          </button>
-          <button type="button" class="shift-btn bg-green-100 hover:bg-green-200 text-green-800 py-3 px-4 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-green-500" data-shift="4" role="radio" aria-checked="false" tabindex="-1">
-            <i class="fas fa-clock mr-2"></i>Shift 4<br /><small>Fleksibel</small>
-          </button>
+      <div class="grid" style="margin-top:10px">
+        <div class="card">
+          <div class="muted">Tanggal</div>
+          <div id="todayDate" style="font-weight:700;margin-top:4px"></div>
         </div>
-        <p class="text-center text-gray-600 mt-4">Shift dipilih: <span id="selectedShift" class="font-semibold text-blue-600">Belum</span></p>
-      </section>
+        <div class="card">
+          <div class="muted">Shift</div>
+          <select id="shiftSel">
+            <option value="">Pilih shift…</option>
+            <option value="1">Shift 1 (07:00–15:00)</option>
+            <option value="2">Shift 2 (15:00–23:00)</option>
+            <option value="3">Shift 3 (23:00–07:00)</option>
+            <option value="4">Fleksibel</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="muted">Status Hari Ini</div>
+          <div id="statusIn">Masuk: -</div>
+          <div id="statusOut">Keluar: -</div>
+        </div>
+      </div>
 
-      <!-- Absensi -->
-      <section class="grid md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-2xl shadow-xl p-8 text-center fade-in" aria-label="Masuk kerja">
-          <div class="mb-6">
-            <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-sign-in-alt text-green-600 text-3xl"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Finger In</h3>
-            <p class="text-gray-600">Absen masuk kerja</p>
-          </div>
-          <button id="fingerInBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-semibold text-lg transition focus:outline-none focus:ring-2 focus:ring-green-400" disabled aria-disabled="true" type="button">
-            <i class="fas fa-fingerprint mr-2"></i>FINGER IN
-          </button>
-          <p id="fingerInTime" class="text-sm text-gray-500 mt-2"></p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-xl p-8 text-center fade-in" aria-label="Pulang kerja">
-          <div class="mb-6">
-            <div class="bg-red-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-sign-out-alt text-red-600 text-3xl"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Finger Out</h3>
-            <p class="text-gray-600">Absen pulang kerja</p>
-          </div>
-          <button id="fingerOutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-semibold text-lg transition focus:outline-none focus:ring-2 focus:ring-red-400" disabled aria-disabled="true" type="button">
-            <i class="fas fa-fingerprint mr-2"></i>FINGER OUT
-          </button>
-          <p id="fingerOutTime" class="text-sm text-gray-500 mt-2"></p>
-        </div>
-      </section>
+      <div class="row" style="margin-top:12px">
+        <button id="btnIn" class="btn ok col">Finger In</button>
+        <button id="btnOut" class="btn bad col">Finger Out</button>
+      </div>
+    </section>
 
-      <!-- Status hari ini -->
-      <section class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in" aria-label="Status hari ini">
-        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-calendar-day mr-2 text-blue-600"></i>Status Hari Ini</h3>
-        <div class="grid md:grid-cols-4 gap-4">
-          <div class="bg-blue-50 p-4 rounded-lg"><p class="text-sm text-gray-600">Tanggal</p><p id="todayDate" class="font-semibold text-gray-800"></p></div>
-          <div class="bg-green-50 p-4 rounded-lg"><p class="text-sm text-gray-600">Masuk</p><p id="todayIn" class="font-semibold text-green-600">-</p></div>
-          <div class="bg-red-50 p-4 rounded-lg"><p class="text-sm text-gray-600">Keluar</p><p id="todayOut" class="font-semibold text-red-600">-</p></div>
-          <div class="bg-purple-50 p-4 rounded-lg"><p class="text-sm text-gray-600">Shift</p><p id="todayShift" class="font-semibold text-purple-600">-</p></div>
+    <!-- ADMIN -->
+    <section id="viewAdmin" class="card hidden">
+      <div class="row" style="align-items:flex-end">
+        <div class="col">
+          <h2 class="title">Admin</h2>
+          <div class="muted">Kelola karyawan & pantau data lokal</div>
         </div>
-      </section>
+        <div class="col" style="text-align:right">
+          <button id="btnBack" class="btn">Kembali</button>
+        </div>
+      </div>
 
-      <!-- Ringkasan Mingguan -->
-      <section class="bg-white rounded-2xl shadow-xl p-6 mb-6 fade-in" aria-label="Ringkasan minggu ini">
-        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-chart-bar mr-2 text-purple-600"></i>Ringkasan Jam Kerja Minggu Ini</h3>
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl">
-            <div class="flex items-center justify-between mb-4"><h4 class="font-semibold text-gray-800">Total Jam Kerja</h4><i class="fas fa-clock text-purple-600 text-xl"></i></div>
-            <div class="space-y-3">
-              <div class="flex justify-between"><span class="text-gray-600">Minggu Ini:</span><span id="weeklyHours" class="font-bold text-purple-600 text-lg">0 jam 0 menit</span></div>
-              <div class="flex justify-between"><span class="text-gray-600">Hari Kerja:</span><span id="workingDays" class="font-semibold text-gray-800">0 hari</span></div>
-              <div class="flex justify-between"><span class="text-gray-600">Rata-rata/Hari:</span><span id="averageHours" class="font-semibold text-gray-800">0 jam 0 menit</span></div>
-            </div>
-          </div>
-          <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl" aria-live="polite" aria-atomic="true">
-            <div class="flex items-center justify-between mb-4"><h4 class="font-semibold text-gray-800">Rincian Harian</h4><i class="fas fa-calendar-week text-green-600 text-xl"></i></div>
-            <div class="space-y-2" id="dailyBreakdown"></div>
-          </div>
+      <div class="row" style="margin-top:10px">
+        <div class="col">
+          <label class="muted">Cari</label>
+          <input id="searchEmp" placeholder="Cari nama/ID…">
         </div>
-        <div class="mt-6">
-          <div class="flex justify-between text-sm text-gray-600 mb-2"><span>Target Mingguan (40 jam)</span><span id="progressPercentage">0%</span></div>
-          <div class="w-full bg-gray-200 rounded-full h-3"><div id="progressBar" class="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div></div>
+        <div class="col" style="display:flex;gap:10px;align-items:flex-end">
+          <button id="btnReloadEmp" class="btn">Reload dari Sheet</button>
+          <button id="btnExportLocal" class="btn">Export CSV Lokal</button>
         </div>
-      </section>
+      </div>
 
-      <!-- Endpoint + Sync -->
-      <section class="bg-white rounded-2xl shadow-xl p-6 fade-in" aria-label="Sinkronisasi">
-        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-table mr-2 text-green-600"></i>Kirim/Sync Data</h3>
-        <p class="text-gray-600 mb-4">Isi URL Web App Google Apps Script (attendance & employees). Lalu **Simpan**.</p>
-        <div class="grid gap-3 md:grid-cols-3">
-          <input id="endpointAttendance" class="md:col-span-2 px-3 py-2 border rounded" placeholder="URL Web App untuk ABSENSI (POST/GET)" />
-          <button id="saveEndpointAttendance" class="px-3 py-2 rounded bg-gray-800 text-white">Simpan Attendance</button>
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><strong>Daftar Karyawan</strong> <span id="empCount" class="badge">0</span></div>
+          <div class="muted">Edit password: klik tombol di baris</div>
         </div>
-        <div class="grid gap-3 md:grid-cols-3 mt-3">
-          <input id="endpointEmployees" class="md:col-span-2 px-3 py-2 border rounded" placeholder="URL Web App untuk KARYAWAN (POST/GET)" />
-          <button id="saveEndpointEmployees" class="px-3 py-2 rounded bg-gray-800 text-white">Simpan Employees</button>
-        </div>
-        <div class="flex items-center gap-3 mt-3 text-sm">
-          <span id="endpointAttendanceStatus" class="badge bg-gray-200 text-gray-700">Attendance: belum diisi</span>
-          <span id="endpointEmployeesStatus" class="badge bg-gray-200 text-gray-700">Employees: belum diisi</span>
-          <span class="badge bg-gray-100 text-gray-600" id="queueCount">Queue: 0</span>
-        </div>
-        <div class="grid md:grid-cols-3 gap-3 mt-4">
-          <button id="sendSnapshotBtn" class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 rounded-lg font-semibold" type="button">
-            <i class="fas fa-paper-plane mr-2"></i>KIRIM SNAPSHOT HARI INI
-          </button>
-          <button id="pullAttendanceBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold" type="button">
-            <i class="fas fa-cloud-arrow-down mr-2"></i>AMBIL ABSENSI DARI SHEET
-          </button>
-          <button id="pullEmployeesBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold" type="button">
-            <i class="fas fa-users-gear mr-2"></i>AMBIL KARYAWAN DARI SHEET
-          </button>
-        </div>
-        <p id="sendStatus" class="text-center text-sm mt-3" role="status" aria-live="polite"></p>
-      </section>
-    </div>
-  </div>
-
-  <!-- Admin Dashboard -->
-  <div id="adminDashboard" class="hidden min-h-screen p-4">
-    <div class="max-w-6xl mx-auto">
-      <div id="adminHeader"></div>
-
-      <!-- Admin actions -->
-      <section class="bg-white rounded-2xl shadow-xl p-6 mb-6">
-        <div class="grid lg:grid-cols-4 gap-3">
-          <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input id="searchInput" class="px-3 py-2 border rounded" placeholder="Cari nama / ID / tanggal (YYYY-MM-DD)" />
-            <div class="flex gap-3">
-              <button id="exportCSV" class="px-3 py-2 rounded bg-green-600 text-white w-full"><i class="fas fa-file-csv mr-2"></i>Export CSV</button>
-              <button id="forceSync" class="px-3 py-2 rounded bg-blue-600 text-white w-full"><i class="fas fa-rotate mr-2"></i>Paksa Sync</button>
-            </div>
-          </div>
-
-          <!-- Employee management -->
-          <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label class="px-3 py-2 border rounded flex items-center justify-between gap-3 cursor-pointer">
-              <input id="empCsvFile" type="file" accept=".csv" class="hidden" />
-              <span>Impor Karyawan (CSV)</span>
-              <i class="fas fa-upload"></i>
-            </label>
-            <div class="flex gap-3">
-              <button id="saveEmployeesToSheet" class="px-3 py-2 rounded bg-indigo-600 text-white w-full"><i class="fas fa-cloud-arrow-up mr-2"></i>Simpan ke Sheet</button>
-              <button id="refreshEmployeesFromSheet" class="px-3 py-2 rounded bg-indigo-700 text-white w-full"><i class="fas fa-cloud-arrow-down mr-2"></i>Tarik dari Sheet</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Attendance table -->
-      <section class="bg-white rounded-2xl shadow-xl p-6">
-        <div class="overflow-auto border rounded-lg">
-          <table class="min-w-full text-sm" id="adminTable">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-3 py-2 text-left">Tanggal</th>
-                <th class="px-3 py-2 text-left">User ID</th>
-                <th class="px-3 py-2 text-left">Nama</th>
-                <th class="px-3 py-2 text-left">Role</th>
-                <th class="px-3 py-2 text-left">Shift</th>
-                <th class="px-3 py-2 text-left">Masuk</th>
-                <th class="px-3 py-2 text-left">Keluar</th>
-              </tr>
-            </thead>
-            <tbody id="adminTbody"></tbody>
+        <div style="max-height:360px;overflow:auto">
+          <table id="tblEmp">
+            <thead><tr><th>ID</th><th>Nama</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead>
+            <tbody></tbody>
           </table>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   </div>
 
-  <!-- Command Palette -->
-  <div id="cmdk" class="hidden fixed inset-0 z-50 bg-black/40">
-    <div class="mx-auto max-w-xl mt-24 bg-white rounded-xl shadow-2xl p-4">
-      <input id="cmdkInput" class="w-full px-3 py-2 border rounded mb-3" placeholder="Cari: user, tanggal (YYYY-MM-DD), fitur..." />
-      <div id="cmdkList" class="max-h-64 overflow-auto text-sm"></div>
-    </div>
-  </div>
+  <div id="toast" class="toast hidden"></div>
 
-  <script>
-    // =================== KONFIG & STATE ===================
-    const DEMO_EMPLOYEES = {
-      "0001": { userId:"0001", name:"Joseph Preistley", role:"user",  password:"0001" },
-      "0002": { userId:"0002", name:"Panda Reyez",     role:"admin", password:"0002" }
-    };
+<script>
+/* ===== CONFIG ===== */
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbzMR-FbZXZpNrc-p2xqHfoZSnggq57t8dZYV0Lv01rc3bFK_1qrRlEQEPyQnh__05MF1A/exec";
 
-    let currentUser = null;
-    let selectedShift = null;
+/* ===== STATE / STORAGE KEYS ===== */
+const LS = {
+  employees: "absensi_employees_v1",
+  employeesFetchedAt: "absensi_employees_at_v1",
+  session: "absensi_session_v1",
+  attendance: "absensi_attendance_v1",
+  queue: "absensi_queue_v1"
+};
+let EMP = []; // [{id,name,password,role}]
+let currentUser = null;
+let attendance = {}; // userId -> date -> {in,out,shift}
+let queue = []; // outbox mirror
 
-    // attendanceData: { [userId]: { [YYYY-MM-DD]: { name, role, shift, in?, out? } } }
-    let attendanceData = {};
-    // employees: { [userId]: { userId, name, role, password } }
-    let employees = {};
-    // outbox queue (for attendance writes)
-    let syncQueue = [];
+/* ===== UI HELPERS ===== */
+function qs(id){return document.getElementById(id)}
+function show(v){v.classList.remove("hidden")}
+function hide(v){v.classList.add("hidden")}
+function toast(m){const t=qs("toast");t.textContent=m;t.classList.remove("hidden");setTimeout(()=>t.classList.add("hidden"),1800)}
+function setOnlineBadge(){qs("badgeOnline").textContent = navigator.onLine? "Online":"Offline"}
+function setSyncState(t){qs("syncState").textContent=t}
 
-    // endpoints
-    let endpointAttendance = ""; // POST write absensi; GET list absensi (mendukung ?since=ISO)
-    let endpointEmployees = "";  // GET/POST data karyawan
+/* ===== TIME ===== */
+function todayKey(d=new Date()){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split("T")[0]}
+function timeNow(){return new Date().toLocaleTimeString("id-ID")}
 
-    // timestamps
-    let lastPullAttendance = 0; // epoch ms
-    let lastPullEmployees = 0;
+/* ===== INDEXEDDB for queue ===== */
+const DB_NAME="absensiMinimalDB", DB_VER=1; let idb=null;
+function idbOpen(){return new Promise(res=>{ if(!("indexedDB" in window)) return res(null); const r=indexedDB.open(DB_NAME,DB_VER); r.onupgradeneeded=e=>{const db=e.target.result; if(!db.objectStoreNames.contains("queue")) db.createObjectStore("queue",{keyPath:"id"})}; r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); })}
+function idbAll(){return new Promise(r=>{ if(!idb) return r([]); const tx=idb.transaction("queue","readonly"); const req=tx.objectStore("queue").getAll(); req.onsuccess=()=>r(req.result||[]); req.onerror=()=>r([]); })}
+function idbPut(it){return new Promise(r=>{ if(!idb) return r(); const tx=idb.transaction("queue","readwrite"); tx.objectStore("queue").put(it); tx.oncomplete=r; tx.onerror=r; })}
+function idbDel(id){return new Promise(r=>{ if(!idb) return r(); const tx=idb.transaction("queue","readwrite"); tx.objectStore("queue").delete(id); tx.oncomplete=r; tx.onerror=r; })}
 
-    const DB_NAME = 'absensiDB';
-    const DB_VERSION = 1;
-    let db = null;
+/* ===== LOAD/SAVE LOCAL ===== */
+function loadLocal(){
+  try{EMP = JSON.parse(localStorage.getItem(LS.employees))||[]}catch{EMP=[]}
+  try{attendance = JSON.parse(localStorage.getItem(LS.attendance))||{}}catch{attendance={}}
+  try{queue = JSON.parse(localStorage.getItem(LS.queue))||[]}catch{queue=[]}
+  try{const s=JSON.parse(localStorage.getItem(LS.session)); if(s) currentUser = s;}catch{}
+}
+function saveEmployees(){localStorage.setItem(LS.employees, JSON.stringify(EMP))}
+function saveAttendance(){localStorage.setItem(LS.attendance, JSON.stringify(attendance))}
+function saveQueue(){localStorage.setItem(LS.queue, JSON.stringify(queue))}
+function saveSession(){ if(currentUser) localStorage.setItem(LS.session, JSON.stringify(currentUser)); else localStorage.removeItem(LS.session)}
 
-    const LS_KEYS = {
-      attendance: "attendanceData",
-      employees: "employeesData",
-      queue: "syncQueue",
-      endpointAttendance: "endpointAttendance",
-      endpointEmployees: "endpointEmployees",
-      session: "sessionUser",
-      lastPullAttendance: "lastPullAttendance",
-      lastPullEmployees: "lastPullEmployees"
-    };
-
-    // =================== INDEXEDDB QUEUE ===================
-    function idbOpen(){
-      return new Promise((resolve)=>{
-        if (!('indexedDB' in window)) return resolve(null);
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = (e)=>{
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('queue')) db.createObjectStore('queue', { keyPath: 'id' });
-        };
-        req.onsuccess = ()=> resolve(req.result);
-        req.onerror = ()=> resolve(null);
-      });
+/* ===== FETCH EMPLOYEES FROM SHEET ===== */
+async function fetchEmployees(force=false){
+  const last = Number(localStorage.getItem(LS.employeesFetchedAt)||0);
+  const stale = Date.now()-last > (12*60*60*1000); // 12 jam
+  if(!force && EMP.length && !stale) return EMP;
+  try{
+    const res = await fetch(ENDPOINT, {method:"GET", cache:"no-store"});
+    const data = await res.json();
+    if(Array.isArray(data)){
+      EMP = data.map(x=>({id:String(x.id||"").trim(), name:String(x.name||x.nama||"").trim(), password:String(x.password||"").trim(), role:(x.role||"user").toLowerCase()}));
+      saveEmployees(); localStorage.setItem(LS.employeesFetchedAt, String(Date.now()));
+      renderEmpTable();
+      return EMP;
+    } else {
+      toast("Format karyawan tidak valid"); return EMP;
     }
-    async function idbPutQueue(item){ if(!db) return; await new Promise(res=>{ const tx=db.transaction('queue','readwrite'); tx.objectStore('queue').put(item); tx.oncomplete=res; tx.onerror=()=>res(); }); }
-    async function idbDeleteQueue(id){ if(!db) return; await new Promise(res=>{ const tx=db.transaction('queue','readwrite'); tx.objectStore('queue').delete(id); tx.oncomplete=res; tx.onerror=()=>res(); }); }
-    async function idbReadAllQueue(){ if(!db) return []; return await new Promise(res=>{ const tx=db.transaction('queue','readonly'); const req=tx.objectStore('queue').getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>res([]); }); }
+  }catch(e){ toast("Gagal ambil karyawan (offline?)"); return EMP; }
+}
 
-    // =================== LOCAL STORAGE ===================
-    function loadLocal() {
-      try { attendanceData = JSON.parse(localStorage.getItem(LS_KEYS.attendance)) || {}; } catch { attendanceData = {}; }
-      try { employees = JSON.parse(localStorage.getItem(LS_KEYS.employees)) || DEMO_EMPLOYEES; } catch { employees = DEMO_EMPLOYEES; }
-      try { syncQueue = JSON.parse(localStorage.getItem(LS_KEYS.queue)) || []; } catch { syncQueue = []; }
-      try { endpointAttendance = localStorage.getItem(LS_KEYS.endpointAttendance) || ""; } catch { endpointAttendance = ""; }
-      try { endpointEmployees = localStorage.getItem(LS_KEYS.endpointEmployees) || ""; } catch { endpointEmployees = ""; }
-      try { lastPullAttendance = parseInt(localStorage.getItem(LS_KEYS.lastPullAttendance)||"0",10) || 0; } catch { lastPullAttendance = 0; }
-      try { lastPullEmployees = parseInt(localStorage.getItem(LS_KEYS.lastPullEmployees)||"0",10) || 0; } catch { lastPullEmployees = 0; }
-      try { const sess = JSON.parse(localStorage.getItem(LS_KEYS.session)); if (sess) currentUser = sess; } catch {}
+/* ===== AUTH ===== */
+function findEmp(id){id=String(id||"").trim(); return EMP.find(e=>e.id===id)}
+function login(id, pass){
+  const u=findEmp(id);
+  if(!u) return {ok:false,msg:"User tidak ditemukan"};
+  if(String(u.password)!==String(pass)) return {ok:false,msg:"Password salah"};
+  currentUser = {id:u.id,name:u.name,role:u.role};
+  saveSession();
+  showUserView();
+  toast("Login sukses");
+  return {ok:true}
+}
 
-      // hydrate inputs & badges
-      const ea = document.getElementById('endpointAttendance'); if (ea) ea.value = endpointAttendance;
-      const ee = document.getElementById('endpointEmployees'); if (ee) ee.value = endpointEmployees;
-      setEndpointBadges();
-      document.getElementById('queueCount').textContent = `Queue: ${syncQueue.length}`;
+/* ===== VIEWS ===== */
+function showLoginView(){
+  show(qs("viewLogin")); hide(qs("viewUser")); hide(qs("viewAdmin"));
+  hide(qs("btnLogout"));
+}
+function showUserView(){
+  hide(qs("viewLogin")); show(qs("viewUser")); hide(qs("viewAdmin"));
+  show(qs("btnLogout"));
+  qs("userName").textContent=currentUser.name;
+  qs("userId").textContent=currentUser.id;
+  qs("userRole").textContent=currentUser.role;
+  qs("todayDate").textContent = new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  restoreTodayStatus();
+}
+function showAdminView(){
+  hide(qs("viewLogin")); hide(qs("viewUser")); show(qs("viewAdmin"));
+  renderEmpTable();
+}
+
+/* ===== ATTENDANCE ===== */
+function ensureUserDay(uid, date){
+  attendance[uid]=attendance[uid]||{};
+  attendance[uid][date]=attendance[uid][date]||{shift:"",in:null,out:null};
+  return attendance[uid][date];
+}
+function restoreTodayStatus(){
+  const k=todayKey(); const r=(attendance[currentUser.id]||{})[k];
+  qs("statusIn").textContent = "Masuk: " + (r && r.in ? r.in : "-");
+  qs("statusOut").textContent = "Keluar: " + (r && r.out ? r.out : "-");
+  qs("shiftSel").value = (r && r.shift) ? r.shift : "";
+}
+function enqueueSync(payload){
+  const item = { id: `${payload.userId}-${payload.date}-${payload.type}-${Date.now()}`, payload, retries:0, last:0 };
+  queue.push(item); saveQueue(); idbPut(item); processQueue();
+}
+async function processQueue(){
+  if(!navigator.onLine){ setSyncState("Offline"); return }
+  if(!queue.length){ setSyncState("Sinkron siap"); return }
+  setSyncState("Sinkron...");
+  const remain = [];
+  for(const it of queue){
+    try{
+      const r = await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(it.payload)});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      await idbDel(it.id);
+    }catch(e){
+      it.retries++; it.last=Date.now();
+      if(it.retries<12){ remain.push(it); await idbPut(it); }
     }
-    function saveAttendance() { localStorage.setItem(LS_KEYS.attendance, JSON.stringify(attendanceData)); renderAdminTable(); }
-    function saveEmployees()  { localStorage.setItem(LS_KEYS.employees, JSON.stringify(employees)); }
-    function saveQueue()      { localStorage.setItem(LS_KEYS.queue, JSON.stringify(syncQueue)); document.getElementById('queueCount').textContent = `Queue: ${syncQueue.length}`; }
-    function saveEndpoints()  {
-      localStorage.setItem(LS_KEYS.endpointAttendance, endpointAttendance||"");
-      localStorage.setItem(LS_KEYS.endpointEmployees, endpointEmployees||"");
-      setEndpointBadges();
-    }
-    function saveSession() { if (currentUser) localStorage.setItem(LS_KEYS.session, JSON.stringify(currentUser)); else localStorage.removeItem(LS_KEYS.session); }
-    function setEndpointBadges(){
-      const a = document.getElementById('endpointAttendanceStatus');
-      const b = document.getElementById('endpointEmployeesStatus');
-      if (a) { a.textContent = endpointAttendance ? 'Attendance: siap' : 'Attendance: belum diisi'; a.className = 'badge ' + (endpointAttendance?'bg-blue-100 text-blue-700':'bg-gray-200 text-gray-700'); }
-      if (b) { b.textContent = endpointEmployees ? 'Employees: siap' : 'Employees: belum diisi'; b.className = 'badge ' + (endpointEmployees?'bg-blue-100 text-blue-700':'bg-gray-200 text-gray-700'); }
-    }
+  }
+  queue = remain; saveQueue();
+  setSyncState(queue.length? `Tertunda: ${queue.length}` : "Sinkron siap");
+}
 
-    // =================== UI HELPERS ===================
-    function toast(msg) {
-      const el = document.createElement('div');
-      el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full shadow-lg text-sm z-50';
-      el.textContent = msg; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 2200);
-    }
-    function setNetBadge(text, cls) {
-      const b = document.getElementById('netBadge');
-      b.textContent = text; b.className = `px-3 py-1 rounded-full text-sm font-medium shadow-lg ${cls}`; b.classList.remove('hidden');
-      setTimeout(()=> b.classList.add('hidden'), 1400);
-    }
-    function setOnlineBadge(){
-      const el = document.getElementById('onlineBadge');
-      if (!el) return;
-      el.textContent = navigator.onLine ? 'Online' : 'Offline';
-      el.className = `badge ${navigator.onLine? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`;
-    }
-    function setSyncState(text) { const el = document.getElementById('syncState'); if (el){ el.textContent = text; el.classList.remove('hidden'); } }
+/* ===== PASSWORD CHANGE ===== */
+async function changePassword(targetId, newPass){
+  // Optimistic: update local cache first
+  const u = findEmp(targetId);
+  if(!u) throw new Error("User tidak ditemukan");
+  u.password = String(newPass||"").trim();
+  saveEmployees(); renderEmpTable();
+  // Try server update (requires Apps Script to support this action)
+  try{
+    const r = await fetch(ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"updatePassword", id: targetId, password: u.password})});
+    if(!r.ok){ throw new Error("HTTP "+r.status) }
+    toast("Password diperbarui");
+  }catch(e){
+    toast("Password lokal diganti. Pastikan Apps Script dukung updatePassword.");
+  }
+}
 
-    // =================== DATE/TIME ===================
-    function todayKey(d=new Date()) { return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split('T')[0]; }
-    function formatTime(d=new Date()) { return d.toLocaleTimeString('id-ID'); }
-
-    // =================== INIT ===================
-    document.addEventListener('DOMContentLoaded', async () => {
-      db = await idbOpen();
-      const qFromIDB = await idbReadAllQueue();
-      loadLocal();
-      // merge queue from IDB
-      if (qFromIDB.length) {
-        const map = new Map(syncQueue.map(i=>[i.id,i]));
-        qFromIDB.forEach(i=>{ if(!map.has(i.id)) map.set(i.id, i); });
-        syncQueue = Array.from(map.values());
-        saveQueue();
-      }
-
-      updateTodayDate();
-      domMountHeaders();
-      initializeShiftButtons();
-      setupLoginForm();
-      setupFingerButtons();
-      setupSyncButtons();
-      setupLogout();
-      setupAdminUI();
-      setupCmdK();
-      restoreSession();
-      registerSW();
-      setOnlineBadge();
-
-      // Network listeners
-      window.addEventListener('online', () => { setNetBadge('Kembali Online', 'bg-green-600 text-white'); setOnlineBadge(); processQueue(); autoPullAll(); });
-      window.addEventListener('offline', () => { setNetBadge('Offline', 'bg-gray-600 text-white'); setOnlineBadge(); });
-
-      // Auto sync tiap 30 detik (jika online)
-      setInterval(() => {
-        if (navigator.onLine) { processQueue(); autoPullAll(); }
-      }, 30000);
+/* ===== ADMIN TABLE ===== */
+function renderEmpTable(){
+  const tbody = qs("tblEmp").querySelector("tbody");
+  if(!tbody) return;
+  const q = (qs("searchEmp").value||"").toLowerCase();
+  const rows = EMP.filter(x=> !q || x.id.toLowerCase().includes(q) || x.name.toLowerCase().includes(q) || x.role.toLowerCase().includes(q));
+  qs("empCount").textContent = rows.length;
+  tbody.innerHTML="";
+  for(const u of rows){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${u.id}</td><td>${u.name}</td><td>${u.role}</td><td>${"*".repeat(Math.max(4,String(u.password).length))}</td>
+      <td><button class="btn" data-id="${u.id}">Ganti</button></td>`;
+    tbody.appendChild(tr);
+  }
+  tbody.querySelectorAll("button[data-id]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const id = btn.getAttribute("data-id");
+      const np = prompt("Password baru untuk "+id+":");
+      if(np==null || np==="") return;
+      try{ await changePassword(id, np) }catch(e){ toast("Gagal: "+e.message) }
     });
+  });
+}
 
-    function domMountHeaders() {
-      const tpl = document.getElementById('appHeaderTpl').content.cloneNode(true);
-      document.getElementById('userHeader').appendChild(tpl);
-      const tpl2 = document.getElementById('appHeaderTpl').content.cloneNode(true);
-      document.getElementById('adminHeader').appendChild(tpl2);
+/* ===== EVENTS ===== */
+window.addEventListener("online", ()=>{ setOnlineBadge(); processQueue() });
+window.addEventListener("offline", ()=>{ setOnlineBadge(); setSyncState("Offline") });
+
+qs("btnLogin").addEventListener("click", ()=>{
+  const id=qs("loginId").value.trim(); const p=qs("loginPass").value;
+  const r=login(id,p); qs("loginMsg").textContent = r.ok? "" : r.msg;
+});
+qs("btnRefreshEmployees").addEventListener("click", async ()=>{
+  await fetchEmployees(true); toast("Karyawan diperbarui");
+});
+qs("btnToAdmin").addEventListener("click", ()=>{
+  if(currentUser && currentUser.role==="admin"){ showAdminView(); }
+  else {
+    const adm = prompt("Masukkan ID admin:"); const pass = prompt("Password admin:");
+    const r = login(adm, pass);
+    if(r.ok && currentUser.role==="admin"){ showAdminView(); }
+    else { toast("Bukan admin"); showLoginView(); currentUser=null; saveSession(); }
+  }
+});
+qs("btnBack").addEventListener("click", ()=>{ if(currentUser) showUserView(); else showLoginView(); });
+qs("btnLogout").addEventListener("click", ()=>{ currentUser=null; saveSession(); showLoginView() });
+qs("btnReloadEmp").addEventListener("click", async ()=>{ await fetchEmployees(true) });
+qs("btnExportLocal").addEventListener("click", ()=>{
+  const uidList = Object.keys(attendance);
+  const rows = [];
+  for(const uid of uidList){
+    const per = attendance[uid]||{};
+    for(const d of Object.keys(per)){
+      const r=per[d];
+      rows.push({date:d,userId:uid,in:r.in||"",out:r.out||"",shift:r.shift||""});
     }
+  }
+  const header = ["date","userId","in","out","shift"];
+  const csv = [header.join(",")].concat(rows.map(r=> header.map(k=> `"${String(r[k]||"").replaceAll('"','""')}"`).join(","))).join("\n");
+  const blob = new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="absensi-local.csv"; a.click(); URL.revokeObjectURL(a.href);
+});
+qs("searchEmp").addEventListener("input", renderEmpTable);
+qs("btnChangePassSelf").addEventListener("click", async ()=>{
+  if(!currentUser) return;
+  const np = prompt("Password baru:");
+  if(np==null || np==="") return;
+  try{ await changePassword(currentUser.id, np); toast("Password diganti"); }
+  catch(e){ toast("Gagal: "+e.message) }
+});
 
-    // =================== VIEW ===================
-    function updateTodayDate() {
-      const el = document.getElementById('todayDate'); if (el)
-        el.textContent = new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    }
+qs("btnIn").addEventListener("click", ()=>{
+  if(!currentUser) return toast("Login dulu");
+  const sh = qs("shiftSel").value; if(!sh) return toast("Pilih shift dulu");
+  const k=todayKey(); const rec=ensureUserDay(currentUser.id,k); if(rec.in) return toast("Sudah finger in");
+  rec.shift=sh; rec.in=timeNow(); saveAttendance(); restoreTodayStatus();
+  enqueueSync({timestamp:new Date().toISOString(), userId:currentUser.id, name:currentUser.name, type:"in", date:k, time:rec.in, shift:sh});
+});
+qs("btnOut").addEventListener("click", ()=>{
+  if(!currentUser) return toast("Login dulu");
+  const k=todayKey(); const rec=ensureUserDay(currentUser.id,k); if(!rec.in) return toast("Belum finger in"); if(rec.out) return toast("Sudah finger out");
+  const sh = rec.shift || qs("shiftSel").value || "";
+  rec.out=timeNow(); saveAttendance(); restoreTodayStatus();
+  enqueueSync({timestamp:new Date().toISOString(), userId:currentUser.id, name:currentUser.name, type:"out", date:k, time:rec.out, shift:sh||null});
+});
 
-    function initializeShiftButtons() {
-      const shiftButtons = document.querySelectorAll('.shift-btn');
-      shiftButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          shiftButtons.forEach((b) => { b.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-200'); b.setAttribute('aria-checked','false'); b.setAttribute('tabindex','-1'); });
-          btn.classList.add('ring-2','ring-blue-500','bg-blue-200'); btn.setAttribute('aria-checked','true'); btn.setAttribute('tabindex','0'); btn.focus();
-          selectedShift = btn.dataset.shift; document.getElementById('selectedShift').textContent = `Shift ${selectedShift}`; enableFingerButtons();
-        });
-      });
-    }
+/* ===== INIT ===== */
+(async function(){
+  idb = await idbOpen();
+  const qAll = await idbAll();
+  loadLocal();
+  // merge IDB queue to memory if needed
+  if(qAll && qAll.length){
+    const map = new Map(queue.map(i=>[i.id,i]));
+    qAll.forEach(i=>{ if(!map.has(i.id)) map.set(i.id,i) });
+    queue = Array.from(map.values()); saveQueue();
+  }
+  setOnlineBadge();
+  await fetchEmployees(false);
+  if(currentUser) showUserView(); else showLoginView();
+  processQueue();
+  setInterval(()=>{ if(navigator.onLine) processQueue() }, 30000);
+})();
 
-    function enableFingerButtons() {
-      document.getElementById('fingerInBtn').disabled = false; document.getElementById('fingerOutBtn').disabled = false;
-      document.getElementById('fingerInBtn').setAttribute('aria-disabled','false'); document.getElementById('fingerOutBtn').setAttribute('aria-disabled','false');
-    }
-
-    // =================== AUTH (ROLE) ===================
-    function setupLoginForm() {
-      const loginForm = document.getElementById('loginForm');
-      const loginError = document.getElementById('loginError');
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-        loginError.classList.add('hidden'); loginError.textContent = '';
-
-        // Pastikan data karyawan terbaru (tarik saat online)
-        if (navigator.onLine && endpointEmployees) { await pullEmployees(); }
-
-        const user = employees[username];
-        if (!user || user.password !== password) { return showLoginError('User ID atau password salah'); }
-
-        currentUser = { id: user.userId, name: user.name, role: user.role || 'user' };
-        saveSession();
-        if (currentUser.role === 'admin') showAdminDashboard(); else showUserDashboard();
-        autoPullAll(); // ambil data absen terbaru saat login
-      });
-
-      function showLoginError(message) {
-        loginError.textContent = message; loginError.classList.remove('hidden');
-        document.getElementById('password').value=''; document.getElementById('password').focus();
-      }
-    }
-
-    function showUserDashboard() {
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('adminDashboard').classList.add('hidden');
-      document.getElementById('userDashboard').classList.remove('hidden');
-      // header info
-      document.querySelectorAll('#userName').forEach(n=> n.textContent = currentUser.name);
-      document.querySelectorAll('#userID').forEach(n=> n.textContent = `ID: ${currentUser.id}`);
-      document.querySelectorAll('#userRole').forEach(n=> n.textContent = currentUser.role.toUpperCase());
-      updateUserStatus();
-    }
-
-    function showAdminDashboard(){
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('userDashboard').classList.add('hidden');
-      document.getElementById('adminDashboard').classList.remove('hidden');
-      // header info
-      document.querySelectorAll('#userName').forEach(n=> n.textContent = currentUser?.name || '');
-      document.querySelectorAll('#userID').forEach(n=> n.textContent = currentUser ? `ID: ${currentUser.id}` : '');
-      document.querySelectorAll('#userRole').forEach(n=> n.textContent = (currentUser?.role||'admin').toUpperCase());
-      renderAdminTable();
-    }
-
-    function restoreSession() { if (currentUser) { (currentUser.role==='admin')?showAdminDashboard():showUserDashboard(); } }
-
-    function setupLogout() {
-      document.querySelectorAll('#logoutBtn').forEach(btn=>{
-        btn.addEventListener('click', () => { currentUser = null; saveSession(); location.reload(); });
-      });
-    }
-
-    // =================== ABSENSI ===================
-    function setupFingerButtons() {
-      document.getElementById('fingerInBtn').addEventListener('click', () => {
-        if (!selectedShift) return alert('Silakan pilih shift terlebih dahulu!');
-        if (!currentUser) return alert('Harap login dahulu');
-        const now = new Date(); const tKey = todayKey(now);
-        attendanceData[currentUser.id] = attendanceData[currentUser.id] || {};
-        const day = attendanceData[currentUser.id][tKey] || { name: currentUser.name, role: currentUser.role, shift: selectedShift };
-        if (day.in) return alert('Anda sudah melakukan finger in hari ini!');
-        day.in = formatTime(now); day.shift = selectedShift; attendanceData[currentUser.id][tKey] = day; saveAttendance();
-        enqueueSync({ type: 'in', userId: currentUser.id, name: currentUser.name, role: currentUser.role, date: tKey, time: day.in, shift: selectedShift });
-        toast(`Finger In berhasil (Shift ${selectedShift})`); updateUserStatus();
-      });
-
-      document.getElementById('fingerOutBtn').addEventListener('click', () => {
-        if (!selectedShift) return alert('Silakan pilih shift terlebih dahulu!');
-        if (!currentUser) return alert('Harap login dahulu');
-        const now = new Date(); const tKey = todayKey(now);
-        const userRec = attendanceData[currentUser.id] && attendanceData[currentUser.id][tKey];
-        if (!(userRec && userRec.in)) return alert('Anda harus melakukan finger in terlebih dahulu!');
-        if (userRec.out) return alert('Anda sudah melakukan finger out hari ini!');
-        userRec.out = formatTime(now); saveAttendance();
-        enqueueSync({ type: 'out', userId: currentUser.id, name: currentUser.name, role: currentUser.role, date: tKey, time: userRec.out, shift: userRec.shift || selectedShift });
-        toast(`Finger Out berhasil (Shift ${selectedShift})`); updateUserStatus();
-      });
-    }
-
-    function updateUserStatus() {
-      if (!currentUser) return; const tKey = todayKey();
-      const todayData = attendanceData[currentUser.id] && attendanceData[currentUser.id][tKey];
-      if (todayData) {
-        document.getElementById('todayIn').textContent = todayData.in || '-';
-        document.getElementById('todayOut').textContent = todayData.out || '-';
-        document.getElementById('todayShift').textContent = todayData.shift ? `Shift ${todayData.shift}` : '-';
-        document.getElementById('fingerInTime').textContent = todayData.in ? `Masuk: ${todayData.in}` : '';
-        document.getElementById('fingerOutTime').textContent = todayData.out ? `Keluar: ${todayData.out}` : '';
-        if (todayData.shift) {
-          selectedShift = todayData.shift; document.getElementById('selectedShift').textContent = `Shift ${selectedShift}`;
-          const shiftButtons = document.querySelectorAll('.shift-btn');
-          shiftButtons.forEach((btn) => { btn.classList.remove('ring-2','ring-blue-500','bg-blue-200'); btn.setAttribute('aria-checked','false'); if (btn.dataset.shift === String(selectedShift)) { btn.classList.add('ring-2','ring-blue-500','bg-blue-200'); btn.setAttribute('aria-checked','true'); } });
-          enableFingerButtons();
-        }
-      } else {
-        document.getElementById('todayIn').textContent = '-';
-        document.getElementById('todayOut').textContent = '-';
-        document.getElementById('todayShift').textContent = '-';
-        document.getElementById('fingerInTime').textContent = '';
-        document.getElementById('fingerOutTime').textContent = '';
-      }
-      updateWeeklyHoursSummary();
-    }
-
-    function getWeekDates() {
-      const today = new Date(); const currentDay = today.getDay() || 7; const monday = new Date(today); monday.setDate(today.getDate() - currentDay + 1);
-      const dates = []; for (let i=0;i<7;i++){ const d=new Date(monday); d.setDate(monday.getDate()+i); dates.push(d);} return dates;
-    }
-
-    function parseHMStime(str) {
-      const norm = (str||'0:0:0').replaceAll('.', ':');
-      const parts = norm.split(':').map(p=>parseInt(p,10));
-      const h = parts[0]||0, m = parts[1]||0, s = parts[2]||0; return h*3600 + m*60 + s;
-    }
-
-    function updateWeeklyHoursSummary() {
-      if (!currentUser) return; const weekDates = getWeekDates();
-      let totalMinutes = 0; let workingDays = 0; const dailyHours = [];
-      weekDates.forEach((date)=>{
-        const key = todayKey(date); const dat = attendanceData[currentUser.id] && attendanceData[currentUser.id][key];
-        const dayName = date.toLocaleDateString('id-ID', { weekday:'short' }); const dayDate = date.getDate();
-        if (dat && dat.in && dat.out) {
-          const sec = Math.max(0, parseHMStime(dat.out) - parseHMStime(dat.in)); const minutes = Math.floor(sec/60);
-          totalMinutes += minutes; workingDays++; const h = Math.floor(minutes/60), m = minutes%60;
-          dailyHours.push({ day:`${dayName}, ${dayDate}`, duration:`${h}j ${m}m`, hasData:true });
-        } else if (dat && dat.in) {
-          dailyHours.push({ day:`${dayName}, ${dayDate}`, duration:'Belum keluar', hasData:true });
-        } else {
-          dailyHours.push({ day:`${dayName}, ${dayDate}`, duration:'-', hasData:false });
-        }
-      });
-      const th = Math.floor(totalMinutes/60), tm = totalMinutes%60; document.getElementById('weeklyHours').textContent = `${th} jam ${tm} menit`;
-      document.getElementById('workingDays').textContent = `${workingDays} hari`;
-      if (workingDays>0) { const avg = Math.floor(totalMinutes/workingDays); const ah=Math.floor(avg/60), am=avg%60; document.getElementById('averageHours').textContent = `${ah} jam ${am} menit`; } else { document.getElementById('averageHours').textContent = '0 jam 0 menit'; }
-      const progress = Math.min((totalMinutes/2400)*100, 100); document.getElementById('progressPercentage').textContent = `${Math.round(progress)}%`; document.getElementById('progressBar').style.width = `${progress}%`;
-      const dailyBreakdown = document.getElementById('dailyBreakdown'); dailyBreakdown.innerHTML = '';
-      dailyHours.forEach((day)=>{
-        const el = document.createElement('div'); el.className = 'flex justify-between text-sm';
-        const textColor = day.hasData ? 'text-gray-800' : 'text-gray-400'; const durationColor = day.duration==='Belum keluar' ? 'text-orange-600' : (day.duration==='-' ? 'text-gray-400' : 'text-green-600');
-        el.innerHTML = `<span class="${textColor}">${day.day}</span><span class="font-semibold ${durationColor}">${day.duration}</span>`; dailyBreakdown.appendChild(el);
-      });
-    }
-
-    // =================== SYNC (OUTBOX WRITE) ===================
-    function enqueueSync(payload) {
-      const normalized = {
-        timestamp: new Date().toISOString(),
-        userId: payload.userId,
-        name: payload.name,
-        role: payload.role || 'user',
-        type: payload.type, // 'in' | 'out' | 'snapshot'
-        date: payload.date, // YYYY-MM-DD
-        time: payload.time || null, // HH:MM:SS (lokal)
-        shift: payload.shift || null
-      };
-      const item = { id: `${normalized.userId}-${normalized.date}-${normalized.type}-${Date.now()}`, payload: normalized, retries: 0, lastTried: 0 };
-      syncQueue.push(item); saveQueue(); idbPutQueue(item); processQueue();
-    }
-
-    async function processQueue() {
-      if (!navigator.onLine) return;
-      if (!syncQueue.length) { setSyncState('Sinkron siap'); return; }
-      if (!endpointAttendance) { setSyncState('Endpoint attendance belum diisi'); return; }
-      setSyncState('Sinkron berjalan…');
-
-      const remain = [];
-      for (const item of syncQueue) {
-        try {
-          const res = await fetch(endpointAttendance, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.payload) });
-          if (!res.ok) throw new Error('HTTP '+res.status);
-          await idbDeleteQueue(item.id);
-        } catch (e) {
-          item.retries += 1; item.lastTried = Date.now();
-          if (item.retries < 12) { remain.push(item); await idbPutQueue(item); }
-        }
-      }
-      syncQueue = remain; saveQueue();
-      setSyncState(syncQueue.length ? `Tertunda: ${syncQueue.length}` : 'Sinkron siap');
-    }
-
-    // =================== SYNC (PULL / DOWNLOAD) ===================
-    async function pullAttendance(force=false) {
-      if (!endpointAttendance || !navigator.onLine) return;
-      setSyncState('Mengambil absensi…');
-      try {
-        const since = force ? 0 : (lastPullAttendance||0);
-        const url = new URL(endpointAttendance);
-        if (since) url.searchParams.set('since', new Date(since).toISOString());
-        url.searchParams.set('action','list'); // opsional: jika Apps Script cek action
-        const res = await fetch(url.toString(), { method:'GET' });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json(); // [{timestamp,userId,name,role,type,date,time,shift}, ...]
-        if (Array.isArray(data)) {
-          let changed = 0;
-          data.forEach(row=>{
-            const uid = row.userId; const d = row.date;
-            attendanceData[uid] = attendanceData[uid] || {};
-            const rec = attendanceData[uid][d] || { name: row.name, role: row.role, shift: row.shift||null };
-            if (row.type === 'in' && row.time) rec.in = row.time;
-            if (row.type === 'out' && row.time) rec.out = row.time;
-            if (row.type === 'snapshot') rec.shift = rec.shift || row.shift || null;
-            attendanceData[uid][d] = rec;
-            changed++;
-          });
-          if (changed) { saveAttendance(); if (currentUser) updateUserStatus(); }
-        }
-        lastPullAttendance = Date.now();
-        localStorage.setItem(LS_KEYS.lastPullAttendance, String(lastPullAttendance));
-        setSyncState('Absensi terbaru diambil');
-      } catch (e) {
-        setSyncState('Gagal ambil absensi');
-      }
-    }
-
-    async function pullEmployees(force=false) {
-      if (!endpointEmployees || !navigator.onLine) return;
-      try {
-        const since = force ? 0 : (lastPullEmployees||0);
-        const url = new URL(endpointEmployees);
-        if (since) url.searchParams.set('since', new Date(since).toISOString());
-        url.searchParams.set('action','list'); // opsional
-        const res = await fetch(url.toString(), { method:'GET' });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        const rows = await res.json(); // [{userId,name,role,password}, ...]
-        if (Array.isArray(rows)) {
-          const map = { ...employees };
-          rows.forEach(r=>{ if (r.userId) map[r.userId] = { userId:r.userId, name:r.name||'', role:(r.role||'user').toLowerCase(), password:r.password||'' }; });
-          employees = map; saveEmployees();
-        }
-        lastPullEmployees = Date.now();
-        localStorage.setItem(LS_KEYS.lastPullEmployees, String(lastPullEmployees));
-        toast('Karyawan diperbarui dari Sheet');
-      } catch (e) { toast('Gagal ambil karyawan dari Sheet'); }
-    }
-
-    function autoPullAll(){ pullEmployees(); pullAttendance(); }
-
-    // =================== SYNC BUTTONS ===================
-    function setupSyncButtons(){
-      document.getElementById('saveEndpointAttendance').addEventListener('click', ()=> {
-        endpointAttendance = document.getElementById('endpointAttendance').value.trim(); saveEndpoints(); toast('Endpoint attendance disimpan'); processQueue();
-      });
-      document.getElementById('saveEndpointEmployees').addEventListener('click', ()=> {
-        endpointEmployees = document.getElementById('endpointEmployees').value.trim(); saveEndpoints(); toast('Endpoint employees disimpan'); pullEmployees(true);
-      });
-
-      document.getElementById('sendSnapshotBtn').addEventListener('click', () => {
-        if (!currentUser) return alert('Harap login dahulu');
-        if (!endpointAttendance) return alert('Isi dan simpan URL endpoint attendance terlebih dahulu');
-        const tKey = todayKey(); const rec = attendanceData[currentUser.id] && attendanceData[currentUser.id][tKey];
-        if (!rec) { // buat snapshot minimal shift
-          enqueueSync({ type:'snapshot', userId: currentUser.id, name: currentUser.name, role: currentUser.role, date: tKey, time: null, shift: selectedShift||null });
-        } else {
-          enqueueSync({ type:'snapshot', userId: currentUser.id, name: currentUser.name, role: currentUser.role, date: tKey, time: null, shift: rec.shift||selectedShift||null });
-        }
-        document.getElementById('sendStatus').textContent = 'Snapshot hari ini dikirim ke antrean.';
-      });
-
-      document.getElementById('pullAttendanceBtn').addEventListener('click', ()=> pullAttendance(true));
-      document.getElementById('pullEmployeesBtn').addEventListener('click',  ()=> pullEmployees(true));
-    }
-
-    // =================== ADMIN UI ===================
-    function setupAdminUI(){
-      // search & table
-      const search = document.getElementById('searchInput');
-      if (search) search.addEventListener('input', renderAdminTable);
-      const exportBtn = document.getElementById('exportCSV');
-      if (exportBtn) exportBtn.addEventListener('click', exportCSV);
-      const force = document.getElementById('forceSync');
-      if (force) force.addEventListener('click', processQueue);
-
-      // employee csv
-      const f = document.getElementById('empCsvFile');
-      if (f) f.addEventListener('change', handleImportEmployeeCSV);
-
-      // employee buttons
-      const saveSheet = document.getElementById('saveEmployeesToSheet');
-      const refreshSheet = document.getElementById('refreshEmployeesFromSheet');
-      if (saveSheet) saveSheet.addEventListener('click', pushEmployeesToSheet);
-      if (refreshSheet) refreshSheet.addEventListener('click', ()=> pullEmployees(true));
-    }
-
-    function buildFlatRows(){
-      const rows = [];
-      Object.keys(attendanceData).forEach(uid=>{
-        const perDate = attendanceData[uid]||{};
-        const name = employees[uid]?.name || (perDate && Object.values(perDate)[0]?.name) || '';
-        const role = employees[uid]?.role || (perDate && Object.values(perDate)[0]?.role) || 'user';
-        Object.keys(perDate).forEach(date=>{
-          const r = perDate[date];
-          rows.push({ date, userId: uid, name: r.name||name, role: role, shift: r.shift||'', in: r.in||'', out: r.out||'' });
-        });
-      });
-      rows.sort((a,b)=> (a.date<b.date?1:a.date>b.date?-1:a.userId.localeCompare(b.userId)) );
-      return rows;
-    }
-
-    function renderAdminTable(){
-      const tbody = document.getElementById('adminTbody'); if(!tbody) return; tbody.innerHTML='';
-      const q = (document.getElementById('searchInput').value||'').toLowerCase();
-      const rows = buildFlatRows().filter(r=> !q || r.userId.toLowerCase().includes(q) || r.name.toLowerCase().includes(q) || r.date.toLowerCase().includes(q) || r.role.toLowerCase().includes(q) );
-      if (!rows.length){
-        const tr = document.createElement('tr'); tr.innerHTML = `<td colspan="7" class="px-3 py-4 text-center text-gray-500">Tidak ada data</td>`; tbody.appendChild(tr); return;
-      }
-      rows.forEach(r=>{
-        const tr = document.createElement('tr'); tr.className='border-b last:border-b-0';
-        tr.innerHTML = `<td class="px-3 py-2">${r.date}</td><td class="px-3 py-2">${r.userId}</td><td class="px-3 py-2">${r.name}</td><td class="px-3 py-2">${r.role}</td><td class="px-3 py-2">${r.shift}</td><td class="px-3 py-2">${r.in}</td><td class="px-3 py-2">${r.out}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function exportCSV(){
-      const rows = buildFlatRows();
-      const header = ['date','userId','name','role','shift','in','out'];
-      const lines = [header.join(',')].concat(rows.map(r=> header.map(k=>`"${String(r[k]||'').replaceAll('"','""')}"`).join(',')));
-      const csv = lines.join('\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `absensi-${todayKey()}.csv`; a.click(); URL.revokeObjectURL(a.href);
-    }
-
-    // =================== EMPLOYEE MANAGER ===================
-    function handleImportEmployeeCSV(evt){
-      const file = evt.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        try{
-          const txt = String(reader.result||'');
-          const rows = parseCSV(txt); // returns array of objects
-          const map = {...employees};
-          rows.forEach(r=>{
-            const uid = (r.userId||r.userid||r.id||'').trim();
-            if (!uid) return;
-            map[uid] = {
-              userId: uid,
-              name: (r.name||r.nama||'').trim(),
-              role: (r.role||'user').toLowerCase(),
-              password: (r.password||r.pin||'').trim()
-            };
-          });
-          employees = map; saveEmployees();
-          toast('Karyawan dari CSV berhasil diimpor');
-        }catch(e){ alert('Gagal parsing CSV. Pastikan format: userId,name,role,password'); }
-        evt.target.value = '';
-      };
-      reader.readAsText(file);
-    }
-
-    function parseCSV(text){
-      // Simple CSV parser (supports quoted values)
-      const lines = text.replace(/\r/g,'').split('\n').filter(Boolean);
-      if (!lines.length) return [];
-      const header = lines[0].split(',').map(h=>h.trim());
-      const out = [];
-      for (let i=1;i<lines.length;i++){
-        let line = lines[i];
-        const cols = [];
-        let cur = '', inQuotes=false;
-        for (let j=0;j<line.length;j++){
-          const ch = line[j];
-          if (ch === '"'){
-            if (inQuotes && line[j+1] === '"'){ cur+='"'; j++; }
-            else { inQuotes = !inQuotes; }
-          } else if (ch === ',' && !inQuotes){ cols.push(cur); cur=''; }
-          else { cur += ch; }
-        }
-        cols.push(cur);
-        const obj = {};
-        header.forEach((h,idx)=> obj[h] = (cols[idx]||'').trim());
-        out.push(obj);
-      }
-      return out;
-    }
-
-    async function pushEmployeesToSheet(){
-      if (!endpointEmployees) { alert('Isi endpoint employees terlebih dahulu'); return; }
-      if (!navigator.onLine) { alert('Perlu koneksi internet'); return; }
-      try{
-        const list = Object.values(employees);
-        const res = await fetch(endpointEmployees, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ action:'bulkUpsertEmployees', rows:list })
-        });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        toast('Karyawan tersimpan ke Sheet');
-      }catch(e){ alert('Gagal simpan karyawan ke Sheet'); }
-    }
-
-    // =================== CMD-K ===================
-    function setupCmdK(){
-      const dlg = document.getElementById('cmdk');
-      const input = document.getElementById('cmdkInput');
-      const list = document.getElementById('cmdkList');
-      function open(){ dlg.classList.remove('hidden'); input.value=''; render(); input.focus(); }
-      function close(){ dlg.classList.add('hidden'); }
-      document.querySelectorAll('#openCmdK').forEach(b=> b.addEventListener('click', open));
-      document.addEventListener('keydown', (e)=> {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); open(); }
-        if (e.key==='Escape' && !dlg.classList.contains('hidden')) close();
-      });
-      input.addEventListener('input', render);
-      list.addEventListener('click', (e)=> {
-        const a = e.target.closest('button[data-act]'); if (!a) return;
-        const act = a.dataset.act;
-        close();
-        if (act==='sync') processQueue();
-        if (act==='pullAtt') pullAttendance(true);
-        if (act==='pullEmp') pullEmployees(true);
-        if (act==='admin') showAdminDashboard();
-        if (act==='user') showUserDashboard();
-      });
-
-      function render(){
-        const q = input.value.toLowerCase().trim();
-        const rows = [
-          {label:'Paksa sinkron antrean', act:'sync'},
-          {label:'Ambil Absensi dari Sheet', act:'pullAtt'},
-          {label:'Ambil Karyawan dari Sheet', act:'pullEmp'},
-          {label:'Buka Dashboard Admin', act:'admin'},
-          {label:'Buka Dashboard User', act:'user'},
-        ];
-        const users = Object.values(employees).map(e=>({label:`User: ${e.userId} — ${e.name} [${e.role}]`, act:'noop'}));
-        const all = rows.concat(users);
-        list.innerHTML = '';
-        all.filter(r=> !q || r.label.toLowerCase().includes(q)).forEach(r=>{
-          const btn = document.createElement('button');
-          btn.className='w-full text-left px-3 py-2 hover:bg-gray-100 rounded';
-          btn.dataset.act = r.act;
-          btn.textContent = r.label;
-          list.appendChild(btn);
-        });
-      }
-    }
-
-    // =================== SERVICE WORKER (PWA) ===================
-    async function registerSW() {
-      if ('serviceWorker' in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.register('sw.js');
-          if ('sync' in reg) { try { await reg.sync.register('attendance-sync'); } catch {} }
-        } catch (e) { console.warn('SW register failed', e); }
-      }
-    }
-
-    // Write sw.js fallback (untuk GitHub Pages — inline ke blob)
-    (function ensureSWFile(){
-      const txt = document.getElementById('sw-inline').textContent;
-      const blob = new Blob([txt], {type:'text/javascript'});
-      const url = URL.createObjectURL(blob);
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register(url);
-    })();
-
-    // Listen messages from SW to trigger queue
-    navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', (evt)=>{ if (evt.data && evt.data.type==='sync-request') { processQueue(); } });
-
-  </script>
-
-  <!-- Simple Service Worker (Cache & offline shell). Put this file as sw.js in same folder. -->
-  <script id="sw-inline" type="text/plain">
-    const CACHE = 'absensi-cache-v2';
-    const ASSETS = [
-      './',
-      './index.html',
-      'https://cdn.tailwindcss.com',
-      'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
-    ];
-    self.addEventListener('install', (e)=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())); });
-    self.addEventListener('activate', (e)=>{ e.waitUntil(self.clients.claim()); });
-    self.addEventListener('fetch', (e)=>{
-      const url = new URL(e.request.url);
-      if (url.origin === location.origin) {
-        e.respondWith(
-          caches.match(e.request).then(r=> r || fetch(e.request).then(resp=>{ const copy=resp.clone(); caches.open(CACHE).then(c=>c.put(e.request, copy)); return resp; }))
-        ); 
+/* ===== SERVICE WORKER (inline writer) ===== */
+if("serviceWorker" in navigator){
+  const swBlob = new Blob([`
+    const CACHE="abs-mini-v1";
+    const ASSETS=["./","./index.html"];
+    self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
+    self.addEventListener("activate",e=>{e.waitUntil(self.clients.claim())});
+    self.addEventListener("fetch",e=>{
+      const url=new URL(e.request.url);
+      if(url.origin===location.origin){
+        e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request).then(resp=>{const copy=resp.clone(); caches.open(CACHE).then(c=>c.put(e.request,copy)); return resp;})));
       }
     });
-    self.addEventListener('sync', (e)=>{ if (e.tag === 'attendance-sync') { e.waitUntil((async()=>{ const all = await self.clients.matchAll({includeUncontrolled:true}); for (const c of all) c.postMessage({type:'sync-request'}); })()); } });
-  </script>
+  `], {type:"text/javascript"});
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
 </body>
 </html>
